@@ -1,8 +1,8 @@
 # Checklist dos setores da Dudu Bebidas: design
 
-> **Status: RASCUNHO para aprovação.** Escrito pelo Claude em 21/10/2026 a partir dos 4
-> PDFs de checklist (Cozinha, Garçons, Conveniência/Caixa e Limpeza) e das respostas do
-> Gustavo. Os pontos a decidir estão na seção 13.
+> **Status: APROVADO pelo Gustavo em 21/10/2026.** Escrito pelo Claude a partir dos 4 PDFs
+> de checklist (Cozinha, Garçons, Conveniência/Caixa e Limpeza). As decisões estão na
+> seção 13 e as etapas na seção 14.
 
 ## 1. Objetivo
 
@@ -164,20 +164,35 @@ Igual ao app da cozinha:
 Notificações no celular, relatório em PDF, conta individual por funcionário, fotos com
 mais de 7 dias e gráficos.
 
-## 13. Decisões em aberto
+## 13. Decisões (respondidas em 21/10/2026)
 
-1. **Os itens ficam fixos no código.** Mudar um item exige um pedido ao Claude e um novo
-   deploy. A alternativa é uma tela para o chefe editar os itens, que dá mais trabalho.
-   Proposta: fixos.
-2. **Respostas apagadas também somem do painel.** Depois de 30 dias, nem o "Sim/Não" fica
-   mais visível. Proposta: tudo bem.
-3. **Data só de hoje.** Não dá para preencher o checklist de ontem depois que o dia virou.
-   Proposta: correto.
-4. **Repositório público.** O `CheckListsDudu` foi criado como **público**. Isso não expõe
-   senhas nem chaves, porque elas ficam nos secrets do GitHub e no console. Mas qualquer
-   pessoa pode ler o código e os nomes dos itens. Se preferir, deixe-o **privado** em
-   Settings > General > Danger Zone > Change visibility.
-5. **Projeto Firebase:** o nome do projeto novo, por exemplo `dudu-checklists`.
+1. **Itens fixos no código.** Para mudar um item, o pedido vai ao Claude, que faz um novo
+   deploy. **Sim.**
+2. **Respostas com mais de 30 dias somem do painel.** **Sim.**
+3. **Só dá para preencher o dia de hoje.** **Sim.**
+4. **Repositório público:** decisão do dono do repositório. Nada secreto vai para o
+   código.
+5. **Projeto Firebase:** `dudu-checklists`.
+
+**Limpeza:** em um mesmo dia o funcionário pode registrar **mais de uma** atividade da
+semana. A atividade do dia vem primeiro na tela. Assim fica coberta a regra "os dias podem
+ser alterados".
+
+## 14. Etapas
+
+Cada etapa termina com os testes passando e é mostrada antes da próxima.
+
+1. Projeto Vite, itens dos 4 setores e regras puras (datas, Sim exige foto, progresso,
+   cronograma e avisos da Limpeza, prazos de 7 e 30 dias), com testes.
+2. Firebase: configuração, emuladores e README com os passos do console.
+3. Login e direcionamento por conta (setor ou chefe).
+4. Regras do Firestore, testadas no emulador.
+5. Funcionários (chefe) e checklist do setor (Sim/Não, observação, salvar na hora).
+6. Fotos: câmera, redução no celular, envio e troca.
+7. Limpeza: semana, várias atividades por dia e avisos.
+8. Painel do chefe.
+9. Limpeza automática de fotos (7 dias) e respostas (30 dias).
+10. Visual Dudu, cabeçalhos de segurança, deploy pelo GitHub Actions e checklist final.
 
 ## Anexo A. Itens por setor (copiados dos PDFs)
 
