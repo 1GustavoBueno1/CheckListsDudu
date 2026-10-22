@@ -1,7 +1,7 @@
 // Checklist do setor: turno, quem está preenchendo e os itens do PDF com Sim/Não e
 // observação. Cada resposta é salva na hora em que o botão é tocado.
 import { el, trocar } from '../dom.js';
-import { SETORES, TURNOS, LIMPEZA_GERAL, ATIVIDADES_LIMPEZA, LEMBRETES_LIMPEZA } from '../itens.js';
+import { SETORES, TURNOS, LIMPEZA_DIARIA, ATIVIDADES_LIMPEZA, LEMBRETES_LIMPEZA } from '../itens.js';
 import {
   diaSP,
   formatarData,
@@ -62,7 +62,7 @@ export function telaSetor(repo, setor) {
 
   const visor = ehLimpeza
     ? criarVisor([
-        { chave: 'geral', rotulo: 'Geral hoje' },
+        { chave: 'geral', rotulo: 'Diárias hoje' },
         { chave: 'atividade', rotulo: 'Atividade do dia' },
         { chave: 'semana', rotulo: 'Semana' },
       ])
@@ -75,7 +75,7 @@ export function telaSetor(repo, setor) {
     if (ehLimpeza) {
       const situacao = (id) => ({ sim: 'Feita', nao: 'Não feita' })[respostas.get(id)?.resposta] ?? 'Pendente';
       visor.definir({
-        geral: situacao(LIMPEZA_GERAL.id),
+        geral: `${LIMPEZA_DIARIA.filter((i) => respostas.get(i.id)?.resposta === 'sim').length} de ${LIMPEZA_DIARIA.length}`,
         atividade: situacao(atividadeHoje.id),
         semana: resumo ? `${resumo.feitas} de 7` : null,
       });
@@ -277,7 +277,7 @@ export function telaSetor(repo, setor) {
           'section',
           { class: 'secao-itens' },
           el('h3', {}, 'Hoje'),
-          cartaoItem(LIMPEZA_GERAL),
+          LIMPEZA_DIARIA.map(cartaoItem),
           el('p', { class: 'aviso' }, `Atividade do dia (${nomeDoDia(hoje)}):`),
           cartaoItem(atividadeHoje),
         ),

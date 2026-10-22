@@ -64,7 +64,7 @@ describe('progresso de um turno', () => {
       ['coz-02', { resposta: 'nao' }],
       ['coz-08', { resposta: 'sim' }],
     ]);
-    expect(progresso('cozinha', respostas)).toEqual({ total: 19, respondidos: 3, sim: 2, nao: 1 });
+    expect(progresso('cozinha', respostas)).toEqual({ total: 24, respondidos: 3, sim: 2, nao: 1 });
   });
   it('ignora respostas de itens que não existem no setor', () =>
     expect(progresso('conveniencia', new Map([['coz-01', { resposta: 'sim' }]])).respondidos).toBe(0));
@@ -194,12 +194,12 @@ describe('painel do chefe: resumo de um turno', () => {
   it('turno vazio: tudo pendente', async () => {
     const { resumoTurno } = await import('../src/regras.js');
     const r = resumoTurno('cozinha', new Map());
-    expect([r.progresso.respondidos, r.pendentes.length, r.nomes, r.fotos]).toEqual([0, 19, [], []]);
+    expect([r.progresso.respondidos, r.pendentes.length, r.nomes, r.fotos]).toEqual([0, 24, [], []]);
   });
-  it('Limpeza: "pendente" só a geral e a atividade do dia, não as 7', async () => {
+  it('Limpeza: "pendente" só os itens diários e a atividade do dia, não as 7', async () => {
     const { resumoTurno } = await import('../src/regras.js');
     const r = resumoTurno('limpeza', new Map(), '2026-10-22'); // quinta: depósitos
-    expect(r.pendentes.map((p) => p.item)).toEqual(['limp-geral', 'limp-depositos']);
-    expect(r.progresso.total).toBe(2);
+    expect(r.pendentes.map((p) => p.item)).toEqual(['limp-geral', 'limp-maquina', 'limp-depositos']);
+    expect(r.progresso.total).toBe(3);
   });
 });

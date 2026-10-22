@@ -6,6 +6,7 @@ export const CONTAS = {
   NVErpPpmVHdlzlXwfTZfZFEmSMy1: { papel: 'setor', setor: 'garcons' },
   jLYSnaK3MHdTeKSgGZhs6W9D9b92: { papel: 'setor', setor: 'conveniencia' },
   '8r2CdyO1AOTmvEVRpEE4PABPf882': { papel: 'setor', setor: 'limpeza' },
+  zzl18k81Ere6FYF0C2L3bgr7g4P2: { papel: 'setor', setor: 'churrasco' },
   ydNKFosdWkMMaVIxs1WuxwJdIwy2: { papel: 'chefe' },
 };
 

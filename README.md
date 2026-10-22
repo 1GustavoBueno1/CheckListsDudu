@@ -1,6 +1,6 @@
 # Checklists Dudu
 
-Checklist diário por setor da Dudu Bebidas (Cozinha, Garçons, Conveniência/Caixa e
+Checklist diário por setor da Dudu Bebidas (Cozinha, Garçons, Conveniência/Caixa, Churrasco e
 Limpeza), com fotos obrigatórias e um painel para o chefe. Roda 100% no plano gratuito
 (Spark) do Firebase: Hosting + Firestore + Authentication, sem servidor e sem cartão.
 
@@ -103,19 +103,19 @@ Limites do Spark consultados em 10/2026 (confira em https://firebase.google.com/
 Firestore com 50 mil leituras, 20 mil gravações e 20 mil exclusões por dia, 1 GiB guardado e
 10 GiB por mês de dados enviados; Hosting com 10 GB guardados e 360 MB de transferência por dia.
 
-Suposição: um **dia completo**, com tudo preenchido: 109 respostas (Cozinha 38, Garçons 44,
-Conveniência 24, Limpeza 3) e **80 fotos**, mais observações e correções.
+Suposição: um **dia completo**, com tudo preenchido: 133 respostas (Cozinha 48, Garçons 52,
+Conveniência 24, Churrasco 6, Limpeza 3) e **105 fotos**, mais observações e correções.
 
 | Recurso | Estimativa por dia | Limite | Uso |
 |---|---|---|---|
-| Gravações | ~230 | 20.000 por dia | ~1% |
-| Exclusões (limpeza automática) | ~200 | 20.000 por dia | ~1% |
+| Gravações | ~280 | 20.000 por dia | ~1% |
+| Exclusões (limpeza automática) | ~260 | 20.000 por dia | ~1% |
 | Leituras | ~3.000 a 6.000 | 50.000 por dia | ~6% a 12% |
-| **Fotos guardadas** | **~35 MB por dia (~444 KB cada, medido)** | 1 GiB no total | **~243 MB em 7 dias = ~24%** |
-| Dados enviados ao conferir | ~35 MB se o chefe abrir todas as fotos do dia | 10 GiB por mês | ~1 GiB em 30 dias = ~10% |
+| **Fotos guardadas** | **~47 MB por dia (~444 KB cada, medido)** | 1 GiB no total | **~326 MB em 7 dias = ~32%** |
+| Dados enviados ao conferir | ~47 MB se o chefe abrir todas as fotos do dia | 10 GiB por mês | ~1,4 GiB em 30 dias = ~14% |
 | Hosting | ~1,5 MB na 1ª visita, quase nada depois | 360 MB por dia | < 1% |
 
-De onde vêm as leituras: cada abertura de checklist lê as respostas do turno (até 22) e os
+De onde vêm as leituras: cada abertura de checklist lê as respostas do turno (até 26) e os
 nomes do setor; o painel lê as respostas do dia; as regras fazem 1 leitura por resposta
 gravada (conferem o funcionário) e mais 1 quando há foto; a limpeza lê as respostas de uma
 data por aparelho. As fotos só são baixadas quando alguém toca em "Ver foto".
@@ -145,7 +145,7 @@ prazos aumentarem, refaça esta conta: o limite de 1 GiB é o primeiro que se ap
 
 1. Projeto criado.
 2. App web registrado. A configuração vai em `src/firebase-config.js`.
-3. Authentication com **E-mail/senha** e as 5 contas, com os UIDs em `src/contas.js`.
+3. Authentication com **E-mail/senha** e as 6 contas, com os UIDs em `src/contas.js`.
 4. Firestore em `southamerica-east1` (São Paulo), modo produção.
 
 Nada disso pede cartão. Se aparecer pedido de upgrade para o plano Blaze, recuse.
