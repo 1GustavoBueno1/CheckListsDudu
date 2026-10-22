@@ -16,7 +16,7 @@ data, o que cada setor fez, quem fez e as fotos.
   Functions e sem Cloud Storage. Pelo que sabemos, o Cloud Storage exige o plano Blaze em
   projetos novos.
 - As **fotos ficam no Firestore**: reduzidas no próprio celular e guardadas uma por
-  documento. Com 7 dias de fotos, o banco fica em torno de 110 MB, e o limite é 1 GiB.
+  documento. Com 7 dias de fotos, o banco fica em torno de 243 MB, e o limite é 1 GiB.
 - Projeto Firebase **novo e separado** do app de custos da cozinha.
 
 ## 3. Contas e papéis
@@ -142,14 +142,18 @@ está preenchendo".
 
 ## 10. Consumo estimado (Spark)
 
-Para um dia completo: 3 setores × 2 turnos, mais a Limpeza.
+Para um dia completo (109 respostas e 80 fotos). Os números detalhados e a origem de cada um
+estão no README. Resumo, **com o tamanho real medido das fotos (~444 KB cada no banco)**:
 
 | Recurso | Estimativa por dia | Limite grátis |
 |---|---|---|
-| Gravações | ~200 (110 respostas + 80 fotos + trocas) | 20.000 por dia |
-| Leituras | ~2.000 a 3.000 | 50.000 por dia |
-| Fotos guardadas | ~16 MB por dia, ~110 MB em 7 dias | 1 GiB no total |
-| Dados baixados pelo painel | ~16 MB por conferência completa do dia | 10 GiB por mês |
+| Gravações | ~230 | 20.000 por dia |
+| Leituras | ~3.000 a 6.000 | 50.000 por dia |
+| Fotos guardadas | ~35 MB por dia, ~243 MB em 7 dias | 1 GiB no total (~24%) |
+| Dados enviados | ~35 MB por conferência completa do dia | 10 GiB por mês |
+
+> Correção: a primeira versão deste documento estimava ~16 MB por dia, usando 200 KB por
+> foto. O tamanho medido é mais que o dobro, e o uso real do espaço é de ~24%, não ~11%.
 
 ## 11. Tecnologia
 
