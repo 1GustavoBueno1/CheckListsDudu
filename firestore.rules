@@ -1,11 +1,182 @@
 rules_version = '2';
 
-// Etapa 2: tudo bloqueado. As regras por setor e do chefe entram na etapa 4.
-// Nunca publique regras abertas ("allow read, write: if true").
+// Regras do Firestore dos Checklists Dudu.
+// - Cada conta de setor lê e grava só os documentos do próprio setor.
+// - O chefe lê tudo, cadastra funcionários e pode apagar dados vencidos.
+// - Respostas, fotos e observações só podem ser gravadas com a data de HOJE (São Paulo).
+// - "Sim" num item com (FOTO) só é aceito se a foto for gravada junto.
+// - Fotos vencem em 7 dias e respostas em 30 dias (contando hoje); só o vencido pode ser
+//   apagado (exceto a própria foto de hoje, que o setor pode trocar ou apagar).
+// Os UIDs abaixo são os mesmos de src/contas.js (um teste confere).
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{documento=**} {
-      allow read, write: if false;
+
+    // ---- Contas ----------------------------------------------------------------------
+    function setorDaConta() {
+      return request.auth == null ? null : {
+        'ScjaryIu84Y5IzTqSC9trkmGhsI2': 'cozinha',
+        'NVErpPpmVHdlzlXwfTZfZFEmSMy1': 'garcons',
+        'jLYSnaK3MHdTeKSgGZhs6W9D9b92': 'conveniencia',
+        '8r2CdyO1AOTmvEVRpEE4PABPf882': 'limpeza'
+      }.get(request.auth.uid, null);
+    }
+
+    function chefe() {
+      return request.auth != null && request.auth.uid == 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2';
+    }
+
+    function doSetor(setor) {
+      return setorDaConta() != null && setorDaConta() == setor;
+    }
+
+    // ---- Datas (São Paulo = UTC-3, sem horário de verão desde 2019) ------------------
+    function doisDigitos(n) {
+      return n < 10 ? '0' + string(n) : string(n);
+    }
+
+    // Dia em São Paulo, n dias antes de hoje, como texto AAAA-MM-DD.
+    function diaSP(diasAtras) {
+      let t = request.time - duration.value(3, 'h') - duration.value(diasAtras, 'd');
+      return string(t.year()) + '-' + doisDigitos(t.month()) + '-' + doisDigitos(t.day());
+    }
+
+    function hoje() {
+      return diaSP(0);
+    }
+
+    // Guardar n dias contando hoje: vence o que for anterior a (hoje - (n - 1)).
+    function vencido(data, dias) {
+      return data < diaSP(dias - 1);
+    }
+
+    // ---- Itens -----------------------------------------------------------------------
+    function turnoValido(setor, turno) {
+      return setor == 'limpeza' ? turno == 'dia' : turno in ['almoco', 'noite'];
+    }
+
+    function itemValido(setor, item) {
+      return item is string && (
+        (setor == 'cozinha' && item.matches('^coz-(0[1-9]|1[0-9])$')) ||
+        (setor == 'garcons' && item.matches('^gar-(0[1-9]|1[0-9]|2[0-2])$')) ||
+        (setor == 'conveniencia' && item.matches('^conv-(0[1-9]|1[0-2])$')) ||
+        (setor == 'limpeza' && item in ['limp-geral', 'limp-banheiros', 'limp-camaras',
+          'limp-vidros', 'limp-depositos', 'limp-externa', 'limp-acougue', 'limp-revisao'])
+      );
+    }
+
+    // Itens SEM (FOTO) nos PDFs. Todos os outros exigem foto para "Sim".
+    function precisaFoto(item) {
+      return !(item in ['coz-08', 'coz-18', 'coz-19',
+        'gar-08', 'gar-09', 'gar-10', 'gar-11', 'gar-12', 'gar-13', 'gar-16', 'gar-19',
+        'conv-04', 'conv-05', 'conv-09']);
+    }
+
+    // ---- Ajudantes de validação --------------------------------------------------------
+    function dados() { return request.resource.data; }
+
+    function camposExatos(campos) {
+      return dados().keys().hasAll(campos) && dados().keys().hasOnly(campos);
+    }
+
+    function texto(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function semMudar(campos) {
+      return !dados().diff(resource.data).affectedKeys().hasAny(campos);
+    }
+
+    function criadoEmValido() {
+      return request.method == 'create'
+        ? dados().criado_em == request.time
+        : dados().criado_em == resource.data.criado_em;
+    }
+
+    // O funcionário escolhido existe, está ativo e é do mesmo setor.
+    function funcionarioDoSetor(id, nome, setor) {
+      let f = get(/databases/$(database)/documents/funcionarios/$(id));
+      return id is string && f != null && f.data.setor == setor && f.data.ativo == true
+        && f.data.nome == nome;
+    }
+
+    // ---- Respostas -------------------------------------------------------------------
+    // ID: AAAA-MM-DD_setor_turno_item (uma resposta por item, turno e dia).
+    match /respostas/{id} {
+      allow read: if chefe() || doSetor(resource.data.setor);
+
+      allow create, update: if doSetor(dados().setor)
+        && id == dados().data + '_' + dados().setor + '_' + dados().turno + '_' + dados().item
+        && camposExatos(['data', 'setor', 'turno', 'item', 'resposta', 'observacao',
+                         'funcionario_id', 'funcionario', 'tem_foto', 'criado_em', 'atualizado_em'])
+        && dados().data == hoje()
+        && turnoValido(dados().setor, dados().turno)
+        && itemValido(dados().setor, dados().item)
+        && dados().resposta in ['sim', 'nao']
+        && texto(dados().observacao, 0, 500)
+        && texto(dados().funcionario, 1, 60)
+        && funcionarioDoSetor(dados().funcionario_id, dados().funcionario, dados().setor)
+        && dados().tem_foto is bool
+        && (dados().tem_foto == false
+            || existsAfter(/databases/$(database)/documents/fotos/$(id)))
+        && (dados().resposta == 'nao' || !precisaFoto(dados().item) || dados().tem_foto == true)
+        && dados().atualizado_em == request.time
+        && criadoEmValido()
+        && (request.method == 'create' || semMudar(['data', 'setor', 'turno', 'item']));
+
+      allow delete: if (chefe() || doSetor(resource.data.setor))
+        && vencido(resource.data.data, 30);
+    }
+
+    // ---- Fotos (mesmo ID da resposta) --------------------------------------------------
+    match /fotos/{id} {
+      allow read: if chefe() || doSetor(resource.data.setor);
+
+      allow create, update: if doSetor(dados().setor)
+        && id == dados().data + '_' + dados().setor + '_' + dados().turno + '_' + dados().item
+        && camposExatos(['data', 'setor', 'turno', 'item', 'imagem', 'criado_em'])
+        && dados().data == hoje()
+        && turnoValido(dados().setor, dados().turno)
+        && itemValido(dados().setor, dados().item)
+        && dados().imagem is string
+        && dados().imagem.size() <= 950000
+        && dados().imagem.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+        && dados().criado_em == request.time;
+
+      // O setor apaga a própria foto de hoje (troca) ou qualquer foto vencida.
+      allow delete: if (doSetor(resource.data.setor)
+                        && (resource.data.data == hoje() || vencido(resource.data.data, 7)))
+                    || (chefe() && vencido(resource.data.data, 7));
+    }
+
+    // ---- Observações gerais do turno ---------------------------------------------------
+    // ID: AAAA-MM-DD_setor_turno
+    match /observacoes_turno/{id} {
+      allow read: if chefe() || doSetor(resource.data.setor);
+
+      allow create, update: if doSetor(dados().setor)
+        && id == dados().data + '_' + dados().setor + '_' + dados().turno
+        && camposExatos(['data', 'setor', 'turno', 'texto', 'funcionario', 'atualizado_em'])
+        && dados().data == hoje()
+        && turnoValido(dados().setor, dados().turno)
+        && texto(dados().texto, 0, 2000)
+        && texto(dados().funcionario, 1, 60)
+        && dados().atualizado_em == request.time;
+
+      allow delete: if (chefe() || doSetor(resource.data.setor))
+        && vencido(resource.data.data, 30);
+    }
+
+    // ---- Funcionários (cadastro do chefe) ----------------------------------------------
+    match /funcionarios/{id} {
+      allow read: if chefe() || doSetor(resource.data.setor);
+
+      allow create, update: if chefe()
+        && camposExatos(['setor', 'nome', 'ativo'])
+        && dados().setor in ['cozinha', 'garcons', 'conveniencia', 'limpeza']
+        && texto(dados().nome, 1, 60)
+        && dados().ativo is bool;
+
+      allow delete: if chefe();
     }
   }
 }
