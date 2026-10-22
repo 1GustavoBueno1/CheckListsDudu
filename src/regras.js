@@ -147,3 +147,40 @@ export function turnoPadrao(instante = new Date()) {
   const hora = Number(horaSP(instante).slice(0, 2));
   return hora < 16 ? 'almoco' : 'noite';
 }
+
+// ---- Limpeza: semana e avisos a partir das respostas ---------------------------------
+
+/** As 7 datas da semana (segunda a domingo) que contém o dia. */
+export function diasDaSemana(dia) {
+  const { inicio } = semanaDe(dia);
+  return Array.from({ length: 7 }, (_, i) => somarDias(inicio, i));
+}
+
+/**
+ * respostas: respostas da Limpeza na semana ({ data, item, resposta }).
+ * Só "Sim" conta como feita. Cada atividade traz o dia previsto no cronograma.
+ */
+export function resumoSemana(dia, respostas) {
+  const dias = diasDaSemana(dia);
+  const feitasPor = (item) =>
+    [...new Set(respostas.filter((r) => r.item === item && r.resposta === 'sim').map((r) => r.data))].sort();
+  const atividades = ATIVIDADES_LIMPEZA.map((a) => ({
+    id: a.id,
+    texto: a.texto,
+    prevista: dias[(a.diaSemana + 6) % 7],
+    feitaEm: feitasPor(a.id),
+  }));
+  const diasGeral = feitasPor('limp-geral');
+  return {
+    atividades,
+    feitas: atividades.filter((a) => a.feitaEm.length > 0).length,
+    geral: { feitos: diasGeral.length, dias: diasGeral },
+  };
+}
+
+/** Última data com "Sim" do açougue e das câmaras frias (para alertasLimpeza). */
+export function ultimasDatas(respostas) {
+  const ultima = (item) =>
+    respostas.filter((r) => r.item === item && r.resposta === 'sim').map((r) => r.data).sort().at(-1) ?? null;
+  return { acougue: ultima('limp-acougue'), camaras: ultima('limp-camaras') };
+}

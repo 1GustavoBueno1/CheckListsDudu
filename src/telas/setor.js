@@ -1,8 +1,22 @@
 // Checklist do setor: turno, quem está preenchendo e os itens do PDF com Sim/Não e
 // observação. Cada resposta é salva na hora em que o botão é tocado.
 import { el, trocar } from '../dom.js';
-import { SETORES, TURNOS, itensDoSetor } from '../itens.js';
-import { diaSP, formatarData, nomeDoDia, horaSP, progresso, turnoPadrao, idResposta } from '../regras.js';
+import { SETORES, TURNOS, LIMPEZA_GERAL, ATIVIDADES_LIMPEZA, LEMBRETES_LIMPEZA } from '../itens.js';
+import {
+  diaSP,
+  formatarData,
+  nomeDoDia,
+  horaSP,
+  progresso,
+  turnoPadrao,
+  idResposta,
+  atividadeDoDia,
+  diasDaSemana,
+  resumoSemana,
+  ultimasDatas,
+  alertasLimpeza,
+  diaDaSemana,
+} from '../regras.js';
 import { reduzirFoto } from '../foto.js';
 import { campoSelecao, preencherOpcoes, criarAviso, executar, traduzirErro, criarVisor } from '../ui.js';
 
@@ -30,6 +44,9 @@ export function telaSetor(repo, setor) {
   let turno = config.turnos.length > 1 ? turnoPadrao() : config.turnos[0];
   let funcionarios = [];
   let respostas = new Map();
+  const ehLimpeza = setor === 'limpeza';
+  const atividadeHoje = ehLimpeza ? atividadeDoDia(hoje) : null;
+  let resumo = null; // Limpeza: resumo da semana
 
   // ---- Cabeçalho: dia, turno e quem preenche
   const quem = campoSelecao('Quem está preenchendo');
@@ -43,15 +60,75 @@ export function telaSetor(repo, setor) {
     for (const b of botoesTurno) b.setAttribute('aria-pressed', String(b.dataset.turno === turno));
   }
 
-  const visor = criarVisor([
-    { chave: 'feitos', rotulo: 'Respondidos' },
-    { chave: 'sim', rotulo: 'Sim' },
-    { chave: 'nao', rotulo: 'Não' },
-  ]);
+  const visor = ehLimpeza
+    ? criarVisor([
+        { chave: 'geral', rotulo: 'Geral hoje' },
+        { chave: 'atividade', rotulo: 'Atividade do dia' },
+        { chave: 'semana', rotulo: 'Semana' },
+      ])
+    : criarVisor([
+        { chave: 'feitos', rotulo: 'Respondidos' },
+        { chave: 'sim', rotulo: 'Sim' },
+        { chave: 'nao', rotulo: 'Não' },
+      ]);
   function atualizarVisor() {
+    if (ehLimpeza) {
+      const situacao = (id) => ({ sim: 'Feita', nao: 'Não feita' })[respostas.get(id)?.resposta] ?? 'Pendente';
+      visor.definir({
+        geral: situacao(LIMPEZA_GERAL.id),
+        atividade: situacao(atividadeHoje.id),
+        semana: resumo ? `${resumo.feitas} de 7` : null,
+      });
+      return;
+    }
     const p = progresso(setor, respostas);
     visor.definir({ feitos: `${p.respondidos} de ${p.total}`, sim: String(p.sim), nao: String(p.nao) });
   }
+
+  // ---- Limpeza: avisos, semana e lembretes
+  const areaAvisos = el('div', {});
+  const areaSemana = el('div', {});
+  const DIA_CURTO = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const curto = (data) => `${DIA_CURTO[diaDaSemana(data)]} ${formatarData(data).slice(0, 5)}`;
+
+  async function atualizarLimpeza() {
+    const [daSemana, registros] = await Promise.all([repo.respostasLimpezaNasDatas(diasDaSemana(hoje)), repo.registrosParaAvisos()]);
+    resumo = resumoSemana(hoje, daSemana);
+    const avisos = alertasLimpeza(hoje, ultimasDatas(registros));
+    trocar(
+      areaAvisos,
+      avisos.length
+        ? el('section', { class: 'cartao avisos', role: 'alert' }, el('h3', {}, 'Atenção'), el('ul', {}, avisos.map((a) => el('li', {}, a.mensagem))))
+        : null,
+    );
+    trocar(
+      areaSemana,
+      el(
+        'section',
+        { class: 'cartao semana' },
+        el('h3', {}, 'Esta semana'),
+        el('p', { class: 'aviso' }, `Limpeza geral feita em ${resumo.geral.feitos} de 7 dias.`),
+        el(
+          'ul',
+          { class: 'lista-semana' },
+          resumo.atividades.map((a) =>
+            el(
+              'li',
+              { 'data-feita': String(a.feitaEm.length > 0) },
+              el('span', { class: 'semana-dia' }, DIA_CURTO[diaDaSemana(a.prevista)]),
+              el('span', { class: 'semana-texto' }, a.texto),
+              el('span', { class: 'semana-situacao' }, a.feitaEm.length ? `Feita ${a.feitaEm.map(curto).join(', ')}` : 'Pendente'),
+            ),
+          ),
+        ),
+      ),
+    );
+    atualizarVisor();
+  }
+
+  const lembretes = ehLimpeza
+    ? el('details', { class: 'cartao lembretes' }, el('summary', {}, 'Lembretes do cronograma'), el('ul', {}, LEMBRETES_LIMPEZA.map((l) => el('li', {}, l))))
+    : null;
 
   // ---- Itens
   const lista = el('div', { class: 'pilha' });
@@ -167,6 +244,7 @@ export function telaSetor(repo, setor) {
         respostas.set(item.id, salvo);
         mostrar();
         atualizarVisor();
+        if (ehLimpeza) atualizarLimpeza().catch((e) => aviso.erro(traduzirErro(e)));
       } catch (e) {
         erro.textContent = traduzirErro(e);
         if (!funcionarioAtual()) quem.input.focus();
@@ -191,6 +269,27 @@ export function telaSetor(repo, setor) {
   }
 
   function desenharItens() {
+    if (ehLimpeza) {
+      const outras = ATIVIDADES_LIMPEZA.filter((a) => a.id !== atividadeHoje.id);
+      trocar(
+        lista,
+        el(
+          'section',
+          { class: 'secao-itens' },
+          el('h3', {}, 'Hoje'),
+          cartaoItem(LIMPEZA_GERAL),
+          el('p', { class: 'aviso' }, `Atividade do dia (${nomeDoDia(hoje)}):`),
+          cartaoItem(atividadeHoje),
+        ),
+        el(
+          'details',
+          { class: 'secao-itens outras-atividades', open: outras.some((a) => respostas.has(a.id)) },
+          el('summary', {}, 'Fiz outra atividade da semana hoje'),
+          outras.map(cartaoItem),
+        ),
+      );
+      return;
+    }
     trocar(
       lista,
       config.secoes.map((secao) =>
@@ -229,6 +328,7 @@ export function telaSetor(repo, setor) {
     obsGeral.value = obsTurno?.texto ?? '';
     desenharItens();
     atualizarVisor();
+    if (ehLimpeza) await atualizarLimpeza();
   }
 
   function trocarTurno(t) {
@@ -259,6 +359,7 @@ export function telaSetor(repo, setor) {
     {},
     el('h2', {}, config.nome),
     aviso.elemento,
+    areaAvisos,
     el(
       'section',
       { class: 'cartao cabecalho-checklist' },
@@ -268,6 +369,8 @@ export function telaSetor(repo, setor) {
       visor.elemento,
     ),
     lista,
+    areaSemana,
+    lembretes,
     formObs,
   );
 }

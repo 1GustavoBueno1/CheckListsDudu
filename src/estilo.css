@@ -77,6 +77,11 @@ img {
   max-width: 100%;
 }
 
+/* "hidden" vale sempre, mesmo em elementos que o CSS mostra (ex.: img com display: block). */
+[hidden] {
+  display: none !important;
+}
+
 /* ---- Tipografia ------------------------------------------------------------ */
 
 /* Títulos de seção no estilo do "— B E B I D A S —" do logo. */
@@ -927,4 +932,79 @@ td.acoes button {
 }
 .item {
   scroll-margin-top: calc(var(--altura-barra) + 12px); /* não fica escondido sob o topo fixo */
+}
+
+/* ---- Limpeza --------------------------------------------------------------------- */
+.avisos {
+  margin-bottom: 1.25rem;
+  border-color: var(--erro);
+  border-left: 5px solid var(--erro);
+}
+.avisos h3 {
+  color: var(--erro);
+}
+.avisos ul,
+.lembretes ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.avisos li + li,
+.lembretes li + li {
+  margin-top: 0.4rem;
+}
+.outras-atividades {
+  margin-top: 1rem;
+}
+.outras-atividades > summary {
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--borda);
+  border-radius: var(--raio);
+  cursor: pointer;
+  font-weight: 800;
+}
+.outras-atividades[open] > summary {
+  margin-bottom: 0.25rem;
+}
+.semana {
+  margin-top: 1.25rem;
+}
+.lista-semana {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lista-semana li {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  gap: 0.15rem 0.6rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--borda);
+}
+.semana-dia {
+  grid-row: span 2;
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+.semana-texto {
+  font-weight: 700;
+}
+.semana-situacao {
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+.lista-semana li[data-feita='true'] .semana-situacao {
+  color: var(--verde-texto);
+  font-weight: 700;
+}
+.lembretes {
+  margin-top: 1.25rem;
+}
+.lembretes summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.lembretes ul {
+  margin-top: 0.75rem;
 }

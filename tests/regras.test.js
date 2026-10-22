@@ -127,3 +127,45 @@ describe('turno padrão e formatação', () => {
     expect(nomeDoDia('2026-10-21')).toBe('quarta-feira');
   });
 });
+
+describe('Limpeza: resumo da semana e últimas datas', () => {
+  const r = (data, item, resposta = 'sim') => ({ data, item, resposta });
+  it('diasDaSemana lista segunda a domingo', async () => {
+    const { diasDaSemana } = await import('../src/regras.js');
+    expect(diasDaSemana('2026-10-22')).toEqual(['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25']);
+  });
+  it('resumoSemana: quais atividades foram feitas, em que dias, e a limpeza geral', async () => {
+    const { resumoSemana } = await import('../src/regras.js');
+    const resumo = resumoSemana('2026-10-22', [
+      r('2026-10-19', 'limp-banheiros'),
+      r('2026-10-20', 'limp-banheiros'),
+      r('2026-10-21', 'limp-vidros'),
+      r('2026-10-21', 'limp-depositos', 'nao'), // "Não" não conta como feita
+      r('2026-10-19', 'limp-geral'),
+      r('2026-10-22', 'limp-geral'),
+      r('2026-10-22', 'limp-geral'), // repetida não conta duas vezes
+    ]);
+    const porId = Object.fromEntries(resumo.atividades.map((a) => [a.id, a]));
+    expect(porId['limp-banheiros']).toMatchObject({ prevista: '2026-10-19', feitaEm: ['2026-10-19', '2026-10-20'] });
+    expect(porId['limp-vidros'].feitaEm).toEqual(['2026-10-21']);
+    expect(porId['limp-depositos'].feitaEm).toEqual([]);
+    expect(porId['limp-revisao'].prevista).toBe('2026-10-25'); // domingo fecha a semana
+    expect(resumo.atividades.map((a) => a.id)).toEqual([
+      'limp-banheiros', 'limp-camaras', 'limp-vidros', 'limp-depositos', 'limp-externa', 'limp-acougue', 'limp-revisao',
+    ]);
+    expect(resumo.geral).toEqual({ feitos: 2, dias: ['2026-10-19', '2026-10-22'] });
+    expect(resumo.feitas).toBe(2);
+  });
+  it('ultimasDatas: data mais recente com "Sim" do açougue e das câmaras', async () => {
+    const { ultimasDatas } = await import('../src/regras.js');
+    expect(
+      ultimasDatas([
+        r('2026-10-10', 'limp-acougue'),
+        r('2026-10-17', 'limp-acougue'),
+        r('2026-10-18', 'limp-acougue', 'nao'),
+        r('2026-10-06', 'limp-camaras'),
+      ]),
+    ).toEqual({ acougue: '2026-10-17', camaras: '2026-10-06' });
+    expect(ultimasDatas([])).toEqual({ acougue: null, camaras: null });
+  });
+});

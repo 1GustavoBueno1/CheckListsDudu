@@ -104,6 +104,30 @@ export function criarRepositorio(db) {
     return comId(salvo);
   }
 
+  // ---- Limpeza: semana e avisos --------------------------------------------------
+  // Só filtros de igualdade (setor, data/item em lista): não precisam de índice composto.
+
+  /** Respostas da Limpeza nas datas pedidas (até 7, uma semana). */
+  async function respostasLimpezaNasDatas(datas) {
+    const snap = await getDocs(
+      query(collection(db, 'respostas'), where('setor', '==', 'limpeza'), where('data', 'in', datas)),
+    );
+    return snap.docs.map(comId);
+  }
+
+  /** "Sim" do açougue e das câmaras frias guardados (até 30 dias), para os avisos. */
+  async function registrosParaAvisos() {
+    const snap = await getDocs(
+      query(
+        collection(db, 'respostas'),
+        where('setor', '==', 'limpeza'),
+        where('item', 'in', ['limp-acougue', 'limp-camaras']),
+        where('resposta', '==', 'sim'),
+      ),
+    );
+    return snap.docs.map(comId);
+  }
+
   /** Imagem (data URL) da foto de uma resposta, ou null. Só baixa quando pedida. */
   async function fotoDe(idDaResposta) {
     const snap = await getDoc(doc(db, 'fotos', idDaResposta));
@@ -140,6 +164,8 @@ export function criarRepositorio(db) {
     respostasDoTurno,
     salvarResposta,
     fotoDe,
+    respostasLimpezaNasDatas,
+    registrosParaAvisos,
     observacaoDoTurno,
     salvarObservacaoDoTurno,
   };
