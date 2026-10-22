@@ -15,7 +15,7 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
   por setor e uma do chefe.
 - Nunca coloque no repositório chaves de conta de serviço, senhas ou tokens.
 
-## Console do Firebase (projeto `dudu-checklists`)
+## Console do Firebase (projeto `dudu-checklist`)
 
 1. Projeto criado.
 2. App web registrado. A configuração vai em `src/firebase-config.js`.

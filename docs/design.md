@@ -172,7 +172,7 @@ mais de 7 dias e gráficos.
 3. **Só dá para preencher o dia de hoje.** **Sim.**
 4. **Repositório público:** decisão do dono do repositório. Nada secreto vai para o
    código.
-5. **Projeto Firebase:** `dudu-checklists`.
+5. **Projeto Firebase:** `dudu-checklist`.
 
 **Limpeza:** em um mesmo dia o funcionário pode registrar **mais de uma** atividade da
 semana. A atividade do dia vem primeiro na tela. Assim fica coberta a regra "os dias podem
