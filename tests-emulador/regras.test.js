@@ -301,3 +301,13 @@ describe('funcionários', () => {
     await assertFails(getDoc(doc(db('cozinha'), 'funcionarios', 'f-gar')));
   });
 });
+
+describe('leitura de documento que ainda não existe', () => {
+  it('setor lê (vazio) o próprio documento; outro setor não', async () => {
+    const oid = `${hoje}_cozinha_noite`;
+    await assertSucceeds(getDoc(doc(db('cozinha'), 'observacoes_turno', oid)));
+    await assertFails(getDoc(doc(db('garcons'), 'observacoes_turno', oid)));
+    await assertSucceeds(getDoc(doc(db('cozinha'), 'fotos', id(hoje, 'cozinha', 'almoco', 'coz-01'))));
+    await assertFails(getDoc(doc(db('garcons'), 'fotos', id(hoje, 'cozinha', 'almoco', 'coz-01'))));
+  });
+});

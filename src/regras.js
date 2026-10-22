@@ -126,3 +126,24 @@ export function alertasLimpeza(hoje, ultimas) {
 
 /** Guardar "n dias contando hoje": com n = 7, hoje e os 6 dias anteriores ficam. */
 export const expirado = (data, hoje, dias) => data < somarDias(hoje, -(dias - 1));
+
+// ---- Para a tela --------------------------------------------------------------------
+
+const HORA_SP = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+
+/** "14:05" no fuso de São Paulo. Aceita Date ou Timestamp do Firestore. */
+export const horaSP = (instante) => HORA_SP.format(instante?.toDate ? instante.toDate() : instante);
+
+export function formatarData(dia) {
+  const [a, m, d] = dia.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+export const nomeDoDia = (dia) => DIAS[diaDaSemana(dia)];
+
+/** Sugestão de turno pela hora em São Paulo: até 15:59 Almoço, depois Noite. */
+export function turnoPadrao(instante = new Date()) {
+  const hora = Number(horaSP(instante).slice(0, 2));
+  return hora < 16 ? 'almoco' : 'noite';
+}

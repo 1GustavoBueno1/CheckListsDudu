@@ -6,14 +6,16 @@ import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
 import './estilo.css';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase.js';
+import { auth, db } from './firebase.js';
 import { trocar } from './dom.js';
 import { destinoDe } from './destino.js';
+import { criarRepositorio } from './repositorio.js';
 import { telaLogin } from './telas/login.js';
 import { telaApp } from './telas/app.js';
 
 const raiz = document.getElementById('app');
 
 onAuthStateChanged(auth, (usuario) => {
-  trocar(raiz, usuario ? telaApp(destinoDe(usuario.uid)) : telaLogin());
+  // Repositório novo a cada login: nada da sessão anterior é reaproveitado.
+  trocar(raiz, usuario ? telaApp(destinoDe(usuario.uid), criarRepositorio(db)) : telaLogin());
 });

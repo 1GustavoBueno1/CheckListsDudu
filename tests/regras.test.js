@@ -112,3 +112,18 @@ describe('prazos de guarda', () => {
     expect(expirado('2026-10-21', '2026-10-21', 7)).toBe(false);
   });
 });
+
+describe('turno padrão e formatação', () => {
+  it('antes das 16h em SP sugere Almoço; depois, Noite', async () => {
+    const { turnoPadrao } = await import('../src/regras.js');
+    expect(turnoPadrao(new Date('2026-10-21T18:59:00Z'))).toBe('almoco'); // 15:59 em SP
+    expect(turnoPadrao(new Date('2026-10-21T19:00:00Z'))).toBe('noite'); // 16:00 em SP
+    expect(turnoPadrao(new Date('2026-10-22T02:30:00Z'))).toBe('noite'); // 23:30 em SP
+  });
+  it('datas e horas para a tela', async () => {
+    const { formatarData, horaSP, nomeDoDia } = await import('../src/regras.js');
+    expect(formatarData('2026-10-21')).toBe('21/10/2026');
+    expect(horaSP(new Date('2026-10-21T17:05:00Z'))).toBe('14:05');
+    expect(nomeDoDia('2026-10-21')).toBe('quarta-feira');
+  });
+});

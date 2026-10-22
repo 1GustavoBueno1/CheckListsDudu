@@ -102,7 +102,11 @@ service cloud.firestore {
     // ---- Respostas -------------------------------------------------------------------
     // ID: AAAA-MM-DD_setor_turno_item (uma resposta por item, turno e dia).
     match /respostas/{id} {
-      allow read: if chefe() || doSetor(resource.data.setor);
+      // Leitura de um documento pelo ID usa o setor que está no ID (data_setor_...),
+      // para funcionar também quando o documento ainda não existe. O ID é conferido
+      // com os campos na gravação. Consultas (list) usam o campo setor.
+      allow get: if chefe() || doSetor(id.split('_')[1]);
+      allow list: if chefe() || doSetor(resource.data.setor);
 
       allow create, update: if doSetor(dados().setor)
         && id == dados().data + '_' + dados().setor + '_' + dados().turno + '_' + dados().item
@@ -129,7 +133,11 @@ service cloud.firestore {
 
     // ---- Fotos (mesmo ID da resposta) --------------------------------------------------
     match /fotos/{id} {
-      allow read: if chefe() || doSetor(resource.data.setor);
+      // Leitura de um documento pelo ID usa o setor que está no ID (data_setor_...),
+      // para funcionar também quando o documento ainda não existe. O ID é conferido
+      // com os campos na gravação. Consultas (list) usam o campo setor.
+      allow get: if chefe() || doSetor(id.split('_')[1]);
+      allow list: if chefe() || doSetor(resource.data.setor);
 
       allow create, update: if doSetor(dados().setor)
         && id == dados().data + '_' + dados().setor + '_' + dados().turno + '_' + dados().item
@@ -151,7 +159,11 @@ service cloud.firestore {
     // ---- Observações gerais do turno ---------------------------------------------------
     // ID: AAAA-MM-DD_setor_turno
     match /observacoes_turno/{id} {
-      allow read: if chefe() || doSetor(resource.data.setor);
+      // Leitura de um documento pelo ID usa o setor que está no ID (data_setor_...),
+      // para funcionar também quando o documento ainda não existe. O ID é conferido
+      // com os campos na gravação. Consultas (list) usam o campo setor.
+      allow get: if chefe() || doSetor(id.split('_')[1]);
+      allow list: if chefe() || doSetor(resource.data.setor);
 
       allow create, update: if doSetor(dados().setor)
         && id == dados().data + '_' + dados().setor + '_' + dados().turno
