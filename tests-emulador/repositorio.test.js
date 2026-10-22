@@ -9,7 +9,7 @@ import { diaSP, somarDias } from '../src/regras.js';
 const UID = {
   cozinha: 'ScjaryIu84Y5IzTqSC9trkmGhsI2',
   garcons: 'NVErpPpmVHdlzlXwfTZfZFEmSMy1',
-  chefe: 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2',
+  chefe: 'ydNKFosdWkMMaVIxs1WuxwJdIwy2',
 };
 const JPEG = 'data:image/jpeg;base64,' + 'A'.repeat(2000);
 let env;

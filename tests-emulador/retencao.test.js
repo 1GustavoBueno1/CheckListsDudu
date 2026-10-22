@@ -7,7 +7,7 @@ import { criarRepositorio } from '../src/repositorio.js';
 import { diaSP, somarDias } from '../src/regras.js';
 import { cortes, datasParaLimpar } from '../src/retencao.js';
 
-const UID = { cozinha: 'ScjaryIu84Y5IzTqSC9trkmGhsI2', chefe: 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2' };
+const UID = { cozinha: 'ScjaryIu84Y5IzTqSC9trkmGhsI2', chefe: 'ydNKFosdWkMMaVIxs1WuxwJdIwy2' };
 let env;
 const repo = (quem) => criarRepositorio(env.authenticatedContext(UID[quem]).firestore());
 const hoje = diaSP();

@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     function chefe() {
-      return request.auth != null && request.auth.uid == 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2';
+      return request.auth != null && request.auth.uid == 'ydNKFosdWkMMaVIxs1WuxwJdIwy2';
     }
 
     function doSetor(setor) {

@@ -16,10 +16,11 @@ describe('contas', () => {
     expect(contaDe('NVErpPpmVHdlzlXwfTZfZFEmSMy1')).toEqual({ papel: 'setor', setor: 'garcons' });
     expect(contaDe('jLYSnaK3MHdTeKSgGZhs6W9D9b92')).toEqual({ papel: 'setor', setor: 'conveniencia' });
     expect(contaDe('8r2CdyO1AOTmvEVRpEE4PABPf882')).toEqual({ papel: 'setor', setor: 'limpeza' });
-    expect(contaDe('EfC9RQNucAVR2BJn0Gx0iAqbSQb2')).toEqual({ papel: 'chefe' });
+    expect(contaDe('ydNKFosdWkMMaVIxs1WuxwJdIwy2')).toEqual({ papel: 'chefe' });
   });
   it('conta desconhecida não tem papel', () => {
     expect(contaDe('O91aw1kO6pNqn7VbgbxRFLaCzVI2')).toBeNull(); // UID antigo da Cozinha, descartado
+    expect(contaDe('EfC9RQNucAVR2BJn0Gx0iAqbSQb2')).toBeNull(); // UID antigo do chefe, descartado
     expect(contaDe(undefined)).toBeNull();
   });
 });

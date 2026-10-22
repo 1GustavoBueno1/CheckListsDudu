@@ -6,7 +6,7 @@ import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { criarRepositorio } from '../src/repositorio.js';
 import { diaSP, somarDias, diasDaSemana, resumoSemana, ultimasDatas, alertasLimpeza } from '../src/regras.js';
 
-const UID = { limpeza: '8r2CdyO1AOTmvEVRpEE4PABPf882', chefe: 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2', cozinha: 'ScjaryIu84Y5IzTqSC9trkmGhsI2' };
+const UID = { limpeza: '8r2CdyO1AOTmvEVRpEE4PABPf882', chefe: 'ydNKFosdWkMMaVIxs1WuxwJdIwy2', cozinha: 'ScjaryIu84Y5IzTqSC9trkmGhsI2' };
 let env;
 const repo = (quem) => criarRepositorio(env.authenticatedContext(UID[quem]).firestore());
 const hoje = diaSP();
