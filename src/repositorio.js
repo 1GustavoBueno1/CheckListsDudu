@@ -104,6 +104,12 @@ export function criarRepositorio(db) {
     return comId(salvo);
   }
 
+  /** Imagem (data URL) da foto de uma resposta, ou null. Só baixa quando pedida. */
+  async function fotoDe(idDaResposta) {
+    const snap = await getDoc(doc(db, 'fotos', idDaResposta));
+    return snap.exists() ? snap.data().imagem : null;
+  }
+
   // ---- Observações gerais do turno --------------------------------------------------
   const idObservacao = (data, setor, turno) => `${data}_${setor}_${turno}`;
 
@@ -133,6 +139,7 @@ export function criarRepositorio(db) {
     salvarFuncionario,
     respostasDoTurno,
     salvarResposta,
+    fotoDe,
     observacaoDoTurno,
     salvarObservacaoDoTurno,
   };

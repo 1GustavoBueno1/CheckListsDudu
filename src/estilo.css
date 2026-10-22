@@ -902,3 +902,29 @@ td.acoes button {
 .pilha + .cartao {
   margin-top: 1.25rem;
 }
+
+/* ---- Fotos ----------------------------------------------------------------------- */
+.area-foto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.area-foto[hidden] {
+  display: none;
+}
+.botao-foto {
+  flex: 1 1 auto;
+  min-height: 44px;
+}
+.foto-item {
+  flex-basis: 100%;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--raio-pequeno);
+  background: var(--fundo);
+}
+.item {
+  scroll-margin-top: calc(var(--altura-barra) + 12px); /* não fica escondido sob o topo fixo */
+}

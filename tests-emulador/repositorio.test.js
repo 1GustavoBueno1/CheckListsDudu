@@ -82,6 +82,27 @@ describe('respostas', () => {
     const foto = await getDoc(doc(banco('chefe'), 'fotos', salvo.id));
     expect(foto.data().imagem).toBe(JPEG);
   });
+  it('troca a foto mantendo o "Sim" e lê a foto só quando pedida', async () => {
+    const f = await ana();
+    const r = repo('cozinha');
+    const primeira = await r.salvarResposta(base(f, { item: 'coz-02', resposta: 'sim', imagem: JPEG }));
+    const nova = 'data:image/jpeg;base64,' + 'B'.repeat(3000);
+    const mapa = await r.respostasDoTurno('cozinha', hoje, 'almoco');
+    await r.salvarResposta(base(f, { item: 'coz-02', resposta: 'sim', imagem: nova, existente: mapa.get('coz-02') }));
+    expect(await r.fotoDe(primeira.id)).toBe(nova);
+    expect(await repo('chefe').fotoDe(primeira.id)).toBe(nova);
+    expect(await r.fotoDe(`${hoje}_cozinha_almoco_coz-03`)).toBeNull();
+    await expect(repo('garcons').fotoDe(primeira.id)).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+  it('"Sim" em item com foto que já tem foto não exige foto nova', async () => {
+    const f = await ana();
+    const r = repo('cozinha');
+    await r.salvarResposta(base(f, { item: 'coz-03', resposta: 'sim', imagem: JPEG }));
+    let mapa = await r.respostasDoTurno('cozinha', hoje, 'almoco');
+    await r.salvarResposta(base(f, { item: 'coz-03', resposta: 'nao', existente: mapa.get('coz-03') }));
+    mapa = await r.respostasDoTurno('cozinha', hoje, 'almoco');
+    await expect(r.salvarResposta(base(f, { item: 'coz-03', resposta: 'sim', existente: mapa.get('coz-03') }))).resolves.toMatchObject({ resposta: 'sim', tem_foto: true });
+  });
   it('turnos são separados', async () => {
     const f = await ana();
     await repo('cozinha').salvarResposta(base(f, { item: 'coz-08', resposta: 'nao' }));

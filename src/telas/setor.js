@@ -2,7 +2,8 @@
 // observação. Cada resposta é salva na hora em que o botão é tocado.
 import { el, trocar } from '../dom.js';
 import { SETORES, TURNOS, itensDoSetor } from '../itens.js';
-import { diaSP, formatarData, nomeDoDia, horaSP, progresso, turnoPadrao } from '../regras.js';
+import { diaSP, formatarData, nomeDoDia, horaSP, progresso, turnoPadrao, idResposta } from '../regras.js';
+import { reduzirFoto } from '../foto.js';
 import { campoSelecao, preencherOpcoes, criarAviso, executar, traduzirErro, criarVisor } from '../ui.js';
 
 // Lembra no aparelho quem preencheu por último (só conveniência; pode falhar sem problema).
@@ -60,14 +61,23 @@ export function telaSetor(repo, setor) {
     const meta = el('p', { class: 'meta' });
     const sim = el('button', { type: 'button', class: 'resposta-sim' }, 'Sim');
     const nao = el('button', { type: 'button', class: 'resposta-nao' }, 'Não');
+    // Itens com (FOTO): "Sim" abre a câmera; a foto vai junto com o "Sim".
+    const camera = item.foto
+      ? el('input', { type: 'file', accept: 'image/*', capture: 'environment', class: 'visualmente-oculto', tabindex: '-1', 'aria-hidden': 'true' })
+      : null;
+    const verFoto = el('button', { type: 'button', class: 'botao-foto' }, 'Ver foto');
+    const trocarFoto = el('button', { type: 'button', class: 'botao-foto' }, 'Trocar foto');
+    const imagemFoto = el('img', { class: 'foto-item', alt: `Foto: ${item.texto}`, hidden: true });
+    const areaFoto = item.foto ? el('div', { class: 'area-foto' }, verFoto, trocarFoto, imagemFoto, camera) : null;
     const obsId = `obs-${item.id}`;
     const obs = el('textarea', { id: obsId, rows: 2, maxlength: 500, placeholder: 'Opcional' });
     const cartao = el(
       'article',
       { class: 'item', 'data-item': item.id },
       el('p', { class: 'item-texto' }, item.texto),
-      item.foto ? el('span', { class: 'selo-foto' }, 'Foto obrigatória para Sim') : null,
+      item.foto ? el('span', { class: 'selo-foto' }, 'Exige foto') : null,
       el('div', { class: 'respostas' }, sim, nao),
+      areaFoto,
       el('details', { class: 'item-obs' }, el('summary', {}, 'Observação'), el('label', { for: obsId, class: 'visualmente-oculto' }, 'Observação'), obs),
       erro,
       meta,
@@ -80,11 +90,66 @@ export function telaSetor(repo, setor) {
       nao.setAttribute('aria-pressed', String(r?.resposta === 'nao'));
       if (document.activeElement !== obs) obs.value = r?.observacao ?? '';
       meta.textContent = r
-        ? `${r.resposta === 'sim' ? 'Sim' : 'Não'} · ${r.funcionario}${r.atualizado_em ? ` · ${horaSP(r.atualizado_em)}` : ''}`
+        ? `${r.resposta === 'sim' ? 'Sim' : 'Não'}${r.tem_foto ? ' com foto' : ''} · ${r.funcionario}${r.atualizado_em ? ` · ${horaSP(r.atualizado_em)}` : ''}`
         : 'Ainda não respondido';
+      if (areaFoto) {
+        areaFoto.hidden = !r?.tem_foto;
+        imagemFoto.hidden = true;
+        imagemFoto.removeAttribute('src');
+        verFoto.textContent = 'Ver foto';
+      }
     }
 
-    async function responder(valor) {
+    function abrirCamera() {
+      erro.textContent = '';
+      if (!funcionarioAtual()) {
+        erro.textContent = 'Quem está preenchendo: escolha o seu nome antes de tirar a foto.';
+        quem.input.focus();
+        return;
+      }
+      camera.value = '';
+      camera.click();
+    }
+
+    camera?.addEventListener('change', async () => {
+      const arquivo = camera.files?.[0];
+      if (!arquivo) return;
+      sim.disabled = nao.disabled = trocarFoto.disabled = true;
+      meta.textContent = 'Preparando a foto…';
+      try {
+        const imagem = await reduzirFoto(arquivo);
+        meta.textContent = 'Enviando a foto…';
+        await responder('sim', imagem);
+      } catch (e) {
+        erro.textContent = traduzirErro(e);
+        mostrar();
+      } finally {
+        sim.disabled = nao.disabled = trocarFoto.disabled = false;
+      }
+    });
+
+    verFoto.addEventListener('click', async () => {
+      if (!imagemFoto.hidden) {
+        imagemFoto.hidden = true;
+        verFoto.textContent = 'Ver foto';
+        return;
+      }
+      verFoto.disabled = true;
+      try {
+        const imagem = await repo.fotoDe(idResposta(hoje, setor, turno, item.id));
+        if (!imagem) throw new Error('Foto: não encontrada. Tire a foto de novo.');
+        imagemFoto.src = imagem;
+        imagemFoto.hidden = false;
+        verFoto.textContent = 'Esconder foto';
+      } catch (e) {
+        erro.textContent = traduzirErro(e);
+      } finally {
+        verFoto.disabled = false;
+      }
+    });
+    trocarFoto.addEventListener('click', abrirCamera);
+
+    async function responder(valor, imagem = null) {
       erro.textContent = '';
       sim.disabled = nao.disabled = true;
       try {
@@ -97,6 +162,7 @@ export function telaSetor(repo, setor) {
           observacao: obs.value,
           funcionario: funcionarioAtual(),
           existente: respostas.get(item.id) ?? null,
+          imagem,
         });
         respostas.set(item.id, salvo);
         mostrar();
@@ -109,7 +175,11 @@ export function telaSetor(repo, setor) {
       }
     }
 
-    sim.addEventListener('click', () => responder('sim'));
+    sim.addEventListener('click', () => {
+      // Item com foto ainda sem foto: o "Sim" começa pela câmera.
+      if (item.foto && !respostas.get(item.id)?.tem_foto) abrirCamera();
+      else responder('sim');
+    });
     nao.addEventListener('click', () => responder('nao'));
     // Observação de um item já respondido é salva ao sair do campo.
     obs.addEventListener('change', () => {
