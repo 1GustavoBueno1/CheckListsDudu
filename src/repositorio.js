@@ -10,6 +10,7 @@ import {
   addDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -145,6 +146,38 @@ export function criarRepositorio(db) {
     return snap.exists() ? snap.data().imagem : null;
   }
 
+  // ---- Retenção: apagar o que venceu ------------------------------------------------
+  // As fotos são achadas pelas respostas (mesmo ID), sem baixar as imagens.
+
+  const filtroSetor = (setor) => (setor ? [where('setor', '==', setor)] : []);
+
+  /** Apaga um a um; um documento que já sumiu (outro aparelho apagou) não atrapalha. */
+  async function apagarTodos(refs) {
+    const resultados = await Promise.allSettled(refs.map((r) => deleteDoc(r)));
+    return resultados.filter((r) => r.status === 'fulfilled').length;
+  }
+
+  async function apagarVencidos({ setor = null, datasFotos = [], datasRespostas = [] }) {
+    let fotos = 0;
+    let respostas = 0;
+    let observacoes = 0;
+    if (datasFotos.length) {
+      const comFoto = await getDocs(
+        query(collection(db, 'respostas'), ...filtroSetor(setor), where('data', 'in', datasFotos), where('tem_foto', '==', true)),
+      );
+      fotos += await apagarTodos(comFoto.docs.map((d) => doc(db, 'fotos', d.id)));
+    }
+    if (datasRespostas.length) {
+      const velhas = await getDocs(query(collection(db, 'respostas'), ...filtroSetor(setor), where('data', 'in', datasRespostas)));
+      // Foto de resposta velha que tenha escapado (ex.: app não aberto por semanas).
+      fotos += await apagarTodos(velhas.docs.filter((d) => d.data().tem_foto).map((d) => doc(db, 'fotos', d.id)));
+      respostas = await apagarTodos(velhas.docs.map((d) => d.ref));
+      const obs = await getDocs(query(collection(db, 'observacoes_turno'), ...filtroSetor(setor), where('data', 'in', datasRespostas)));
+      observacoes = await apagarTodos(obs.docs.map((d) => d.ref));
+    }
+    return { fotos, respostas, observacoes };
+  }
+
   // ---- Observações gerais do turno --------------------------------------------------
   const idObservacao = (data, setor, turno) => `${data}_${setor}_${turno}`;
 
@@ -175,6 +208,7 @@ export function criarRepositorio(db) {
     respostasDoTurno,
     salvarResposta,
     fotoDe,
+    apagarVencidos,
     respostasLimpezaNasDatas,
     respostasDoDia,
     observacoesDoDia,

@@ -43,6 +43,20 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
    ter horário de verão, a regra precisa ser ajustada.
 4. **A senha das contas.** Quem souber a senha de um setor age como aquele setor.
 
+## Por quanto tempo os dados ficam (`src/retencao.js`)
+
+- **Fotos: 7 dias. Respostas e observações: 30 dias**, contando hoje.
+- Sem servidor, quem apaga é o próprio app: **3 segundos depois do login**, em segundo
+  plano. Cada setor apaga o que é dele, e o chefe apaga o de todos. As regras só deixam
+  apagar o que já venceu.
+- Cada aparelho lembra até que data já limpou. No dia a dia só a data que acabou de
+  vencer é consultada, e abrir de novo no mesmo dia não faz consulta nenhuma.
+- As fotos são achadas pelas respostas, que têm o mesmo ID, então o app **não baixa as
+  imagens para apagá-las**.
+- **Limite:** cada limpeza olha no máximo as 30 datas anteriores ao prazo. Um dado só
+  escaparia se nenhum aparelho do setor nem o chefe abrisse o app por uns 2 meses. Mesmo
+  assim, o espaço usado ficaria muito abaixo do limite gratuito.
+
 ## Console do Firebase (projeto `dudu-checklist`)
 
 1. Projeto criado.
