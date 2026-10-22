@@ -1,5 +1,5 @@
 // Regras do checklist que não dependem do Firebase (testadas sem emulador).
-import { SETORES, itensDoSetor, ATIVIDADES_LIMPEZA } from './itens.js';
+import { SETORES, itensDoSetor, ATIVIDADES_LIMPEZA, LIMPEZA_DIARIA } from './itens.js';
 
 export const PRAZO_FOTOS_DIAS = 7;
 export const PRAZO_RESPOSTAS_DIAS = 30;
@@ -189,12 +189,12 @@ export function ultimasDatas(respostas) {
 
 /**
  * Resumo de um setor num turno, para o painel. respostas: Map itemId -> resposta.
- * Na Limpeza, o esperado do dia é a limpeza geral + a atividade prevista para o dia;
+ * Na Limpeza, o esperado do dia são os itens diários (geral e máquina) + a atividade prevista para o dia;
  * outras atividades feitas aparecem como respondidas, sem virar pendência.
  */
 export function resumoTurno(setor, respostas, dia = null) {
   const todos = itensDoSetor(setor);
-  const esperados = setor === 'limpeza' && dia ? todos.filter((i) => i.id === 'limp-geral' || i.id === atividadeDoDia(dia).id) : todos;
+  const esperados = setor === 'limpeza' && dia ? todos.filter((i) => LIMPEZA_DIARIA.some((d) => d.id === i.id) || i.id === atividadeDoDia(dia).id) : todos;
   const respondidas = todos.map((i) => [i, respostas.get(i.id)]).filter(([, r]) => r);
   const contar = (valor) => respondidas.filter(([, r]) => r.resposta === valor).length;
   return {

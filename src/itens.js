@@ -7,6 +7,9 @@ export const TURNOS = { almoco: 'Almoço', noite: 'Noite', dia: 'Dia' };
 const item = (id, texto, foto) => ({ id, texto, foto });
 
 export const LIMPEZA_GERAL = item('limp-geral', 'Limpeza geral', true);
+export const LIMPEZA_MAQUINA = item('limp-maquina', 'A máquina de lavar está limpa e brilhando?', true);
+/** Itens que a Limpeza faz todos os dias, além da atividade do dia. */
+export const LIMPEZA_DIARIA = [LIMPEZA_GERAL, LIMPEZA_MAQUINA];
 
 // diaSemana: 0 = domingo ... 6 = sábado (cronograma semanal do PDF da Limpeza).
 export const ATIVIDADES_LIMPEZA = [
@@ -20,7 +23,7 @@ export const ATIVIDADES_LIMPEZA = [
 ];
 
 export const LEMBRETES_LIMPEZA = [
-  'A limpeza geral deve ser feita todos os dias, além da atividade do dia.',
+  'A limpeza geral e a máquina de lavar devem ser feitas todos os dias, além da atividade do dia.',
   'O açougue e a churrasqueira devem ser lavados (chão, paredes e teto) no mínimo 1 vez por semana.',
   'As câmaras frias do açougue devem ser higienizadas internamente a cada 15 dias.',
   'As atividades podem mudar de dia, desde que todas sejam feitas na semana.',
@@ -56,6 +59,12 @@ export const SETORES = {
           item('coz-17', 'Os alimentos estão organizados?', true),
           item('coz-18', 'Os utensílios e produtos de limpeza estão completos? (Se faltar algum, anotar qual em Observação.)', false),
           item('coz-19', 'O controle de estoque está em dia, sem faltar produtos e usando antes da data de vencimento?', false),
+          // Itens acrescentados depois dos PDFs (pedido do chefe).
+          item('coz-20', 'A bacia de espátulas, pegadores e colheres está organizada e limpa?', true),
+          item('coz-21', 'O processador está limpo e brilhando?', true),
+          item('coz-22', 'A batedeira está limpa e brilhando?', true),
+          item('coz-23', 'A bancada de lanches está limpa e brilhando?', true),
+          item('coz-24', 'Os alimentos estão guardados com identificação?', true),
         ],
       },
     ],
@@ -75,6 +84,10 @@ export const SETORES = {
           item('gar-05', 'Os cardápios e materiais de atendimento estão organizados?', true),
           item('gar-06', 'Há copos, talheres e pratos limpos disponíveis?', true),
           item('gar-07', 'A área externa e a entrada estão organizadas?', true),
+          // Itens acrescentados depois dos PDFs (pedido do chefe).
+          item('gar-23', 'O painel de LED está ligado, com som ambiente?', true),
+          item('gar-24', 'A porta lateral está aberta?', true),
+          item('gar-25', 'As mesas externas e as cadeiras estão limpas?', true),
         ],
       },
       {
@@ -102,6 +115,10 @@ export const SETORES = {
           item('gar-22', 'A estação de serviço está limpa e abastecida?', true),
         ],
       },
+      {
+        titulo: '4. Fechamento',
+        itens: [item('gar-26', 'Os lixos do exterior e do interior foram recolhidos?', true)],
+      },
     ],
   },
   conveniencia: {
@@ -128,12 +145,27 @@ export const SETORES = {
       },
     ],
   },
+  churrasco: {
+    nome: 'Churrasco',
+    titulo: 'Checklist do churrasco',
+    turnos: ['almoco', 'noite'],
+    secoes: [
+      {
+        titulo: null,
+        itens: [
+          item('chur-01', 'A churrasqueira está limpa?', true),
+          item('chur-02', 'A câmara fria está limpa e organizada?', true),
+          item('chur-03', 'Os balcões de inox e mármore estão limpos?', true),
+        ],
+      },
+    ],
+  },
   limpeza: {
     nome: 'Limpeza',
     titulo: 'Setor limpeza — cronograma semanal',
     turnos: ['dia'],
     secoes: [
-      { titulo: 'Todos os dias', itens: [LIMPEZA_GERAL] },
+      { titulo: 'Todos os dias', itens: LIMPEZA_DIARIA },
       { titulo: 'Atividades da semana', itens: ATIVIDADES_LIMPEZA },
     ],
   },

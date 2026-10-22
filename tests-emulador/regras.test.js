@@ -24,10 +24,11 @@ const UID = {
   garcons: 'NVErpPpmVHdlzlXwfTZfZFEmSMy1',
   conveniencia: 'jLYSnaK3MHdTeKSgGZhs6W9D9b92',
   limpeza: '8r2CdyO1AOTmvEVRpEE4PABPf882',
+  churrasco: 'zzl18k81Ere6FYF0C2L3bgr7g4P2',
   chefe: 'ydNKFosdWkMMaVIxs1WuxwJdIwy2',
 };
-const FUNC = { cozinha: 'f-coz', garcons: 'f-gar', conveniencia: 'f-conv', limpeza: 'f-limp' };
-const NOME = { cozinha: 'Ana', garcons: 'Bruno', conveniencia: 'Carla', limpeza: 'Davi' };
+const FUNC = { cozinha: 'f-coz', garcons: 'f-gar', conveniencia: 'f-conv', limpeza: 'f-limp', churrasco: 'f-chur' };
+const NOME = { cozinha: 'Ana', garcons: 'Bruno', conveniencia: 'Carla', limpeza: 'Davi', churrasco: 'Edna' };
 
 let env;
 const hoje = diaSP();
@@ -162,9 +163,11 @@ describe('respostas: gravar', () => {
   });
 
   it.each([
-    ['item que não existe (coz-20)', 'cozinha', { item: 'coz-20' }],
+    ['item que não existe (coz-25)', 'cozinha', { item: 'coz-25' }],
     ['item de outro setor', 'cozinha', { item: 'gar-01' }],
-    ['garçons gar-23', 'garcons', { item: 'gar-23' }],
+    ['garçons gar-27', 'garcons', { item: 'gar-27' }],
+    ['churrasco chur-04', 'churrasco', { item: 'chur-04' }],
+    ['churrasco com item da cozinha', 'churrasco', { item: 'coz-01' }],
     ['conveniência conv-13', 'conveniencia', { item: 'conv-13' }],
     ['atividade inventada', 'limpeza', { item: 'limp-piscina' }],
     ['limpeza com turno almoço', 'limpeza', { turno: 'almoco' }],
@@ -196,6 +199,44 @@ describe('respostas: gravar', () => {
   it('chefe NÃO preenche checklist', async () => {
     const r = resposta('cozinha', 'coz-08');
     await assertFails(setDoc(refResposta(db('chefe'), r), r));
+  });
+});
+
+describe('setor Churrasco', () => {
+  it('"Sim" com foto é aceito e sem foto é recusado (3 itens)', async () => {
+    for (const item of ['chur-01', 'chur-02', 'chur-03']) {
+      const r = resposta('churrasco', item, { resposta: 'sim' });
+      await assertFails(setDoc(refResposta(db('churrasco'), r), r));
+      await assertSucceeds(simComFoto(db('churrasco'), 'churrasco', item));
+    }
+  });
+  it('turno da noite vale; turno "dia" não', async () => {
+    const noite = resposta('churrasco', 'chur-01', { turno: 'noite' });
+    await assertSucceeds(setDoc(refResposta(db('churrasco'), noite), noite));
+    const dia = resposta('churrasco', 'chur-02', { turno: 'dia' });
+    await assertFails(setDoc(refResposta(db('churrasco'), dia), dia));
+  });
+  it('só o Churrasco grava no Churrasco e só o chefe e o Churrasco leem', async () => {
+    const r = resposta('churrasco', 'chur-01');
+    await assertFails(setDoc(refResposta(db('cozinha'), r), r));
+    await assertSucceeds(setDoc(refResposta(db('churrasco'), r), r));
+    await assertSucceeds(getDoc(refResposta(db('chefe'), r)));
+    await assertFails(getDoc(refResposta(db('cozinha'), r)));
+    await assertFails(getDoc(refResposta(db('conveniencia'), r)));
+  });
+  it('o Churrasco não grava em outro setor', async () => {
+    const r = resposta('cozinha', 'coz-08');
+    await assertFails(setDoc(refResposta(db('churrasco'), r), r));
+  });
+  it('chefe cadastra funcionário do Churrasco; o setor lê só os seus', async () => {
+    await assertSucceeds(setDoc(doc(db('chefe'), 'funcionarios', 'novo-chur'), { setor: 'churrasco', nome: 'Fulano', ativo: true }));
+    await assertSucceeds(getDoc(doc(db('churrasco'), 'funcionarios', 'novo-chur')));
+    await assertFails(getDoc(doc(db('cozinha'), 'funcionarios', 'novo-chur')));
+  });
+  it('itens novos: cozinha coz-20..24, garçons gar-23..26 e limpeza limp-maquina são aceitos', async () => {
+    for (const [setor, item] of [['cozinha', 'coz-20'], ['cozinha', 'coz-24'], ['garcons', 'gar-23'], ['garcons', 'gar-26'], ['limpeza', 'limp-maquina']]) {
+      await assertSucceeds(simComFoto(db(setor), setor, item));
+    }
   });
 });
 

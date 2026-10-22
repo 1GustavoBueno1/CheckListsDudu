@@ -26,10 +26,11 @@ data, o que cada setor fez, quem fez e as fotos.
 | Cozinha | celular da cozinha | ver e preencher só o checklist da Cozinha |
 | Garçons | celular dos garçons | só o dos Garçons |
 | Conveniência | celular do caixa | só o da Conveniência/Caixa |
+| Churrasco | celular do churrasco | só o do Churrasco |
 | Limpeza | celular da limpeza | só o da Limpeza |
 | Chefe | o chefe | ver todos os setores e cadastrar os funcionários |
 
-- As 5 contas (e-mail + senha) são criadas no console do Firebase. O app não tem tela de
+- As 6 contas (e-mail + senha) são criadas no console do Firebase. O app não tem tela de
   cadastro de contas.
 - Cada conta fica logada no celular do setor e tem o botão Sair.
 - **Nome de quem fez:** antes de começar, o funcionário escolhe o próprio nome numa lista.
@@ -291,3 +292,19 @@ Regras e lembretes do PDF:
 - Tirar 1 foto de cada atividade feita.
 
 Observação: o PDF dos Garçons lista 22 itens. A contagem de 23 na conversa estava errada.
+
+## Alterações depois da aprovação (pedidos do chefe, 22/10/2026)
+
+- **Garçons**: na seção 1 (antes de abrir), 3 itens novos: painel de LED ligado com som
+  ambiente (`gar-23`), porta lateral aberta (`gar-24`), mesas externas e cadeiras limpas
+  (`gar-25`). Nova seção **4. Fechamento** com `gar-26`: lixos do exterior e do interior
+  recolhidos. Total: 26 itens.
+- **Cozinha**: 5 itens novos (`coz-20` a `coz-24`): bacia de espátulas, pegadores e colheres;
+  processador; batedeira; bancada de lanches; alimentos guardados com identificação.
+  Total: 24 itens.
+- **Limpeza**: novo item **diário** `limp-maquina` (máquina de lavar limpa e brilhando), ao lado
+  da limpeza geral. O esperado do dia passa a ser 3 itens (geral, máquina e a atividade do dia).
+- **Novo setor Churrasco** (conta própria, turnos Almoço e Noite), 3 itens: `chur-01`
+  churrasqueira limpa; `chur-02` câmara fria limpa e organizada; `chur-03` balcões de inox e
+  mármore limpos.
+- Todos os itens novos exigem foto para "Sim". Os IDs antigos não mudaram.

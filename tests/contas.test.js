@@ -16,6 +16,7 @@ describe('contas', () => {
     expect(contaDe('NVErpPpmVHdlzlXwfTZfZFEmSMy1')).toEqual({ papel: 'setor', setor: 'garcons' });
     expect(contaDe('jLYSnaK3MHdTeKSgGZhs6W9D9b92')).toEqual({ papel: 'setor', setor: 'conveniencia' });
     expect(contaDe('8r2CdyO1AOTmvEVRpEE4PABPf882')).toEqual({ papel: 'setor', setor: 'limpeza' });
+    expect(contaDe('zzl18k81Ere6FYF0C2L3bgr7g4P2')).toEqual({ papel: 'setor', setor: 'churrasco' });
     expect(contaDe('ydNKFosdWkMMaVIxs1WuxwJdIwy2')).toEqual({ papel: 'chefe' });
   });
   it('conta desconhecida não tem papel', () => {
