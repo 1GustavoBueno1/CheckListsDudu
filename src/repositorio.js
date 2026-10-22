@@ -104,6 +104,17 @@ export function criarRepositorio(db) {
     return comId(salvo);
   }
 
+  // ---- Painel do chefe (o chefe lê todos os setores) ---------------------------------
+  async function respostasDoDia(data) {
+    const snap = await getDocs(query(collection(db, 'respostas'), where('data', '==', data)));
+    return snap.docs.map(comId);
+  }
+
+  async function observacoesDoDia(data) {
+    const snap = await getDocs(query(collection(db, 'observacoes_turno'), where('data', '==', data)));
+    return snap.docs.map(comId);
+  }
+
   // ---- Limpeza: semana e avisos --------------------------------------------------
   // Só filtros de igualdade (setor, data/item em lista): não precisam de índice composto.
 
@@ -165,6 +176,8 @@ export function criarRepositorio(db) {
     salvarResposta,
     fotoDe,
     respostasLimpezaNasDatas,
+    respostasDoDia,
+    observacoesDoDia,
     registrosParaAvisos,
     observacaoDoTurno,
     salvarObservacaoDoTurno,

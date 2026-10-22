@@ -184,3 +184,33 @@ export function ultimasDatas(respostas) {
     respostas.filter((r) => r.item === item && r.resposta === 'sim').map((r) => r.data).sort().at(-1) ?? null;
   return { acougue: ultima('limp-acougue'), camaras: ultima('limp-camaras') };
 }
+
+// ---- Painel do chefe ------------------------------------------------------------------
+
+/**
+ * Resumo de um setor num turno, para o painel. respostas: Map itemId -> resposta.
+ * Na Limpeza, o esperado do dia é a limpeza geral + a atividade prevista para o dia;
+ * outras atividades feitas aparecem como respondidas, sem virar pendência.
+ */
+export function resumoTurno(setor, respostas, dia = null) {
+  const todos = itensDoSetor(setor);
+  const esperados = setor === 'limpeza' && dia ? todos.filter((i) => i.id === 'limp-geral' || i.id === atividadeDoDia(dia).id) : todos;
+  const respondidas = todos.map((i) => [i, respostas.get(i.id)]).filter(([, r]) => r);
+  const contar = (valor) => respondidas.filter(([, r]) => r.resposta === valor).length;
+  return {
+    progresso: {
+      total: esperados.length,
+      respondidos: esperados.filter((i) => respostas.has(i.id)).length,
+      sim: contar('sim'),
+      nao: contar('nao'),
+    },
+    naos: respondidas
+      .filter(([, r]) => r.resposta === 'nao')
+      .map(([i, r]) => ({ item: i.id, texto: i.texto, observacao: r.observacao ?? '', funcionario: r.funcionario })),
+    pendentes: esperados.filter((i) => !respostas.has(i.id)).map((i) => ({ item: i.id, texto: i.texto })),
+    nomes: [...new Set(respondidas.map(([, r]) => r.funcionario))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    fotos: respondidas
+      .filter(([, r]) => r.tem_foto)
+      .map(([i, r]) => ({ id: r.id, item: i.id, texto: i.texto, funcionario: r.funcionario, atualizado_em: r.atualizado_em })),
+  };
+}

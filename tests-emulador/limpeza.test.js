@@ -62,3 +62,13 @@ describe('Limpeza', () => {
     await expect(repo('cozinha').respostasLimpezaNasDatas(diasDaSemana(hoje))).rejects.toMatchObject({ code: 'permission-denied' });
   });
 });
+
+describe('painel: consultas do dia', () => {
+  it('chefe lê todas as respostas e observações do dia; setor não', async () => {
+    const r = await repo('chefe').respostasDoDia(hoje);
+    expect(r.map((x) => x.setor).sort()).toEqual(['cozinha']);
+    await expect(repo('limpeza').respostasDoDia(hoje)).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(repo('chefe').observacoesDoDia(hoje)).resolves.toEqual([]);
+    await expect(repo('cozinha').observacoesDoDia(hoje)).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+});

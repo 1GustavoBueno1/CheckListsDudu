@@ -6,9 +6,10 @@ import { el, trocar } from '../dom.js';
 import { SETORES } from '../itens.js';
 import { telaSetor } from './setor.js';
 import { telaFuncionarios } from './funcionarios.js';
+import { telaPainel } from './painel.js';
 
 const ABAS_CHEFE = [
-  { id: 'painel', nome: 'Painel', tela: () => el('div', {}, el('h2', {}, 'Painel'), el('p', { class: 'aviso' }, 'O painel do chefe entra na etapa 8.')) },
+  { id: 'painel', nome: 'Painel', tela: (repo) => telaPainel(repo) },
   { id: 'funcionarios', nome: 'Funcionários', tela: (repo) => telaFuncionarios(repo) },
 ];
 

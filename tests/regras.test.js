@@ -169,3 +169,37 @@ describe('Limpeza: resumo da semana e últimas datas', () => {
     expect(ultimasDatas([])).toEqual({ acougue: null, camaras: null });
   });
 });
+
+describe('painel do chefe: resumo de um turno', () => {
+  const resp = (item, resposta, extra = {}) => [item, { id: `x_${item}`, item, resposta, funcionario: 'Ana', observacao: '', tem_foto: false, ...extra }];
+  it('progresso, itens "Não", pendentes, nomes e fotos', async () => {
+    const { resumoTurno } = await import('../src/regras.js');
+    const r = resumoTurno(
+      'conveniencia',
+      new Map([
+        resp('conv-01', 'sim', { tem_foto: true }),
+        resp('conv-04', 'nao', { observacao: 'Máquina 2 sem bateria', funcionario: 'Paulo' }),
+        resp('conv-05', 'sim'),
+      ]),
+    );
+    expect(r.progresso).toEqual({ total: 12, respondidos: 3, sim: 2, nao: 1 });
+    expect(r.naos).toEqual([
+      { item: 'conv-04', texto: 'As máquinas de cartão estão carregadas?', observacao: 'Máquina 2 sem bateria', funcionario: 'Paulo' },
+    ]);
+    expect(r.pendentes).toHaveLength(9);
+    expect(r.pendentes[0]).toEqual({ item: 'conv-02', texto: 'O balcão do caixa está organizado?' });
+    expect(r.nomes).toEqual(['Ana', 'Paulo']);
+    expect(r.fotos).toEqual([{ id: 'x_conv-01', item: 'conv-01', texto: 'As prateleiras estão repostas?', funcionario: 'Ana' }]);
+  });
+  it('turno vazio: tudo pendente', async () => {
+    const { resumoTurno } = await import('../src/regras.js');
+    const r = resumoTurno('cozinha', new Map());
+    expect([r.progresso.respondidos, r.pendentes.length, r.nomes, r.fotos]).toEqual([0, 19, [], []]);
+  });
+  it('Limpeza: "pendente" só a geral e a atividade do dia, não as 7', async () => {
+    const { resumoTurno } = await import('../src/regras.js');
+    const r = resumoTurno('limpeza', new Map(), '2026-10-22'); // quinta: depósitos
+    expect(r.pendentes.map((p) => p.item)).toEqual(['limp-geral', 'limp-depositos']);
+    expect(r.progresso.total).toBe(2);
+  });
+});
