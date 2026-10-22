@@ -57,6 +57,90 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
   escaparia se nenhum aparelho do setor nem o chefe abrisse o app por uns 2 meses. Mesmo
   assim, o espaço usado ficaria muito abaixo do limite gratuito.
 
+## Proteções no navegador
+
+- **Sem `innerHTML`**: todo texto digitado é exibido com `textContent` (`src/dom.js` recusa
+  `innerHTML`). Um nome como `<img src=x onerror=alert(1)>` aparece como texto.
+- **Cabeçalhos de segurança** (`firebase.json`, aplicados pelo Firebase Hosting):
+  - `Content-Security-Policy`: scripts, estilos e fontes só do próprio site; imagens do
+    site e `data:` (as fotos); conexões só com o Firestore e o Authentication do Google;
+    sem `eval`, sem plugins, sem scripts de terceiros.
+  - `frame-ancestors 'none'` e `X-Frame-Options: DENY`: o app não pode ser embutido em
+    outro site (contra *clickjacking*).
+  - `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`
+    e HSTS.
+  - A página inicial (`/` e `/index.html`) **nunca fica em cache**, para uma atualização
+    chegar na hora. Os arquivos de `/assets` têm nome com hash e ficam em cache por 1 ano.
+- **Fontes e logo servidos pelo próprio app**: nenhum pedido a Google Fonts ou a outros
+  servidores. O Vite não embute arquivos como `data:` (`vite.config.js`).
+- A CSP foi testada com o **build de produção** servido pelo emulador do Hosting: login,
+  checklist com foto, painel, Limpeza e funcionários funcionaram **sem nenhuma violação**,
+  e um script externo carregado de propósito foi bloqueado.
+
+## Deploy (publicação)
+
+O deploy é **automático pelo GitHub Actions** (`.github/workflows/deploy-firebase.yml`): a
+cada mudança na `main` (menos só em documentos), ele roda os testes unitários e os testes no
+emulador e, **só se tudo passar**, faz o build e publica o Hosting e as regras do Firestore.
+Também dá para rodar à mão em GitHub > Actions > "Deploy no Firebase" > Run workflow.
+
+- A chave da conta de serviço fica no secret `FIREBASE_SERVICE_ACCOUNT` do repositório
+  (Settings > Secrets and variables > Actions > **Repository secrets**). Ela é gravada num
+  arquivo temporário, usada pelo `firebase deploy` e apagada no fim. Nunca vai para o código.
+- A chave é a do projeto **`dudu-checklist`** (cada projeto tem a sua).
+- Endereços: https://dudu-checklist.web.app e https://dudu-checklist.firebaseapp.com
+- Se o deploy falhar por **permissão** (erro 403 ou "permission denied"), a conta de
+  serviço `firebase-adminsdk-…@dudu-checklist.iam.gserviceaccount.com` precisa destes papéis em
+  https://console.cloud.google.com/iam-admin/iam?project=dudu-checklist : *Firebase Hosting
+  Admin*, *Firebase Rules Admin* e *Service Usage Consumer*.
+- O deploy publica **só o site e as regras** (não os índices). As consultas do app usam só
+  filtros de igualdade, que o Firestore atende sem índice composto. **O emulador não confere
+  índices**: se o app real mostrar um erro pedindo índice, avise (o erro traz um link).
+
+## Consumo estimado do plano gratuito (Spark)
+
+Limites do Spark consultados em 10/2026 (confira em https://firebase.google.com/pricing):
+Firestore com 50 mil leituras, 20 mil gravações e 20 mil exclusões por dia, 1 GiB guardado e
+10 GiB por mês de dados enviados; Hosting com 10 GB guardados e 360 MB de transferência por dia.
+
+Suposição: um **dia completo**, com tudo preenchido: 109 respostas (Cozinha 38, Garçons 44,
+Conveniência 24, Limpeza 3) e **80 fotos**, mais observações e correções.
+
+| Recurso | Estimativa por dia | Limite | Uso |
+|---|---|---|---|
+| Gravações | ~230 | 20.000 por dia | ~1% |
+| Exclusões (limpeza automática) | ~200 | 20.000 por dia | ~1% |
+| Leituras | ~3.000 a 6.000 | 50.000 por dia | ~6% a 12% |
+| **Fotos guardadas** | **~35 MB por dia (~444 KB cada, medido)** | 1 GiB no total | **~243 MB em 7 dias = ~24%** |
+| Dados enviados ao conferir | ~35 MB se o chefe abrir todas as fotos do dia | 10 GiB por mês | ~1 GiB em 30 dias = ~10% |
+| Hosting | ~1,5 MB na 1ª visita, quase nada depois | 360 MB por dia | < 1% |
+
+De onde vêm as leituras: cada abertura de checklist lê as respostas do turno (até 22) e os
+nomes do setor; o painel lê as respostas do dia; as regras fazem 1 leitura por resposta
+gravada (conferem o funcionário) e mais 1 quando há foto; a limpeza lê as respostas de uma
+data por aparelho. As fotos só são baixadas quando alguém toca em "Ver foto".
+
+**Atenção:** as fotos são o que mais pesa. Se o número de itens com foto crescer ou os
+prazos aumentarem, refaça esta conta: o limite de 1 GiB é o primeiro que se aproxima.
+
+## Checklist depois do deploy
+
+1. Abra https://dudu-checklist.web.app: aparece a tela de login com o logo.
+2. Numa aba anônima, sem login, nenhuma tela além do login aparece.
+3. Entre como **Chefe** > **Funcionários** e cadastre os nomes de cada setor.
+4. Entre como **Cozinha** (de preferência no celular): escolha o nome, responda um item
+   sem foto e um item com foto. **Confira que a câmera abre** e que a foto aparece em "Ver foto".
+5. Confirme que um item com foto **não aceita "Sim" sem a foto**.
+6. Entre como **Chefe** > **Painel**: o progresso da Cozinha aparece, e "Ver fotos" mostra a
+   foto enviada. Toque nela para ampliar.
+7. Entre como **Limpeza**: aparecem os avisos do açougue e das câmaras (até alguém registrar),
+   a atividade do dia e a semana.
+8. Entre com cada conta de setor e confira que **cada uma vê só o próprio setor**.
+9. No console do Firebase, em Firestore > Regras, as regras publicadas têm os 5 UIDs e não
+   são `allow read, write: if false`.
+10. No console, em Uso e faturamento, o plano continua **Spark**, sem cartão.
+11. Apague os dados de teste (respostas e fotos) ou espere o prazo de 7 e 30 dias.
+
 ## Console do Firebase (projeto `dudu-checklist`)
 
 1. Projeto criado.
