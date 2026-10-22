@@ -24,7 +24,7 @@ const UID = {
   garcons: 'NVErpPpmVHdlzlXwfTZfZFEmSMy1',
   conveniencia: 'jLYSnaK3MHdTeKSgGZhs6W9D9b92',
   limpeza: '8r2CdyO1AOTmvEVRpEE4PABPf882',
-  chefe: 'EfC9RQNucAVR2BJn0Gx0iAqbSQb2',
+  chefe: 'ydNKFosdWkMMaVIxs1WuxwJdIwy2',
 };
 const FUNC = { cozinha: 'f-coz', garcons: 'f-gar', conveniencia: 'f-conv', limpeza: 'f-limp' };
 const NOME = { cozinha: 'Ana', garcons: 'Bruno', conveniencia: 'Carla', limpeza: 'Davi' };
@@ -309,5 +309,16 @@ describe('leitura de documento que ainda não existe', () => {
     await assertFails(getDoc(doc(db('garcons'), 'observacoes_turno', oid)));
     await assertSucceeds(getDoc(doc(db('cozinha'), 'fotos', id(hoje, 'cozinha', 'almoco', 'coz-01'))));
     await assertFails(getDoc(doc(db('garcons'), 'fotos', id(hoje, 'cozinha', 'almoco', 'coz-01'))));
+  });
+});
+
+describe('troca do chefe', () => {
+  it('o UID antigo do chefe perdeu o acesso; o novo lê tudo', async () => {
+    await comoAdmin((a) => setDoc(doc(a, 'funcionarios', 'f-x'), { setor: 'cozinha', nome: 'Ana', ativo: true }));
+    const antigo = env.authenticatedContext('EfC9RQNucAVR2BJn0Gx0iAqbSQb2').firestore();
+    await assertFails(getDoc(doc(antigo, 'funcionarios', 'f-x')));
+    await assertFails(setDoc(doc(antigo, 'funcionarios', 'f-y'), { setor: 'cozinha', nome: 'Bia', ativo: true }));
+    await assertSucceeds(getDoc(doc(db('chefe'), 'funcionarios', 'f-x')));
+    await assertSucceeds(setDoc(doc(db('chefe'), 'funcionarios', 'f-y'), { setor: 'cozinha', nome: 'Bia', ativo: true }));
   });
 });

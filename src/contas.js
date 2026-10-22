@@ -6,7 +6,7 @@ export const CONTAS = {
   NVErpPpmVHdlzlXwfTZfZFEmSMy1: { papel: 'setor', setor: 'garcons' },
   jLYSnaK3MHdTeKSgGZhs6W9D9b92: { papel: 'setor', setor: 'conveniencia' },
   '8r2CdyO1AOTmvEVRpEE4PABPf882': { papel: 'setor', setor: 'limpeza' },
-  EfC9RQNucAVR2BJn0Gx0iAqbSQb2: { papel: 'chefe' },
+  ydNKFosdWkMMaVIxs1WuxwJdIwy2: { papel: 'chefe' },
 };
 
 /** Papel da conta logada, ou null se a conta não é do sistema. */
