@@ -1,10 +1,90 @@
 # Checklists Dudu
 
-Checklist diário por setor da Dudu Bebidas (Cozinha, Garçons, Conveniência/Caixa, Churrasco e
-Limpeza), com fotos obrigatórias e um painel para o chefe. Roda 100% no plano gratuito
-(Spark) do Firebase: Hosting + Firestore + Authentication, sem servidor e sem cartão.
+Checklist diário por setor da **Dudu Bebidas**, feito para o celular, com **foto obrigatória**
+nos itens que pedem e um **painel para o chefe** conferir tudo.
 
-O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
+Roda 100% no plano gratuito (Spark) do Firebase: Hosting + Firestore + Authentication, sem
+servidor próprio e sem cartão.
+
+- Site: https://dudu-checklist.web.app (também https://dudu-checklist.firebaseapp.com)
+- Design completo e etapas: [`docs/design.md`](docs/design.md)
+
+## O que o app faz
+
+- **Cinco setores:** Cozinha, Garçons, Conveniência/Caixa, Churrasco e Limpeza. Cada setor
+  tem uma conta e só vê e preenche o próprio checklist.
+- **Turnos:** Cozinha, Garçons e Conveniência têm dois checklists por dia (Almoço e Noite).
+  A Limpeza é diária, com atividades e avisos da semana.
+- **Foto obrigatória:** nos itens marcados com (FOTO), o "Sim" só é aceito com a foto
+  gravada junto. A foto é reduzida no próprio celular.
+- **Quem fez:** antes de começar, o funcionário escolhe o próprio nome numa lista cadastrada
+  pelo chefe. Cada resposta guarda o nome e a hora do servidor.
+- **Painel do chefe:** progresso de cada setor por data, quem fez, observações e fotos.
+  O chefe também cadastra os funcionários de cada setor.
+- **Limpeza automática:** fotos somem em 7 dias e respostas em 30 dias.
+
+## Tecnologias
+
+- [Vite](https://vite.dev) e JavaScript puro (sem framework), com os módulos em `src/`.
+- [Firebase](https://firebase.google.com): Authentication (e-mail e senha), Firestore e Hosting.
+- [Vitest](https://vitest.dev) para os testes, e os emuladores do Firebase para testar as
+  regras de segurança de verdade.
+- GitHub Actions para testar e publicar.
+
+## Estrutura do projeto
+
+```
+src/
+  main.js, auth.js        entrada do app e login
+  contas.js               UID da conta -> papel (setor ou chefe)
+  itens.js                setores, turnos e itens dos checklists (vindos dos PDFs)
+  regras.js               regras do checklist usadas pelo app
+  repositorio.js          leitura e gravação no Firestore
+  retencao.js             limpeza automática dos dados vencidos
+  foto.js, dom.js, ui.js  foto, DOM seguro (sem innerHTML) e componentes
+  telas/                  login, setor, painel, funcionários e app
+public/                   logo e favicon
+tests/                    testes sem emulador
+tests-emulador/           testes das regras e do repositório nos emuladores
+firestore.rules           regras de segurança do Firestore
+firebase.json             Hosting, cabeçalhos de segurança e emuladores
+docs/design.md            design aprovado e etapas
+.github/workflows/        deploy automático
+```
+
+## Desenvolvimento
+
+Precisa de Node.js 22 e, para os testes de emulador, Java 11 ou mais novo.
+
+```bash
+npm install
+```
+
+```bash
+npm run dev              # app em modo de desenvolvimento (usa o projeto real do Firebase)
+```
+
+```bash
+npm test                 # testes sem emulador (itens, regras do checklist, contas, regras x app)
+```
+
+```bash
+npm run test:emulador    # testes nos emuladores do Firebase (precisa de Java)
+```
+
+Para mexer no app sem tocar nos dados reais, ligue-o aos emuladores, cada comando num terminal:
+
+```bash
+npm run emuladores       # terminal 1: emuladores de Auth + Firestore (projeto demo)
+```
+
+```bash
+npm run dev:emulador     # terminal 2: app ligado aos emuladores
+```
+
+```bash
+npm run build            # build de produção em dist/
+```
 
 ## Segurança
 
@@ -12,10 +92,10 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
   de qualquer visitante. Quem protege os dados são as regras do Firestore
   (`firestore.rules`).
 - Cada conta tem um papel, definido pelo UID em `src/contas.js` e nas regras: uma conta
-  por setor e uma do chefe.
+  por setor e uma do chefe (6 contas).
 - Nunca coloque no repositório chaves de conta de serviço, senhas ou tokens.
 
-## Regras do Firestore (`firestore.rules`)
+### Regras do Firestore (`firestore.rules`)
 
 - **Cada setor só vê e grava o próprio setor.** O chefe lê tudo e não preenche
   checklist. Contas fora do sistema e visitantes sem login não veem nada.
@@ -43,6 +123,26 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
    ter horário de verão, a regra precisa ser ajustada.
 4. **A senha das contas.** Quem souber a senha de um setor age como aquele setor.
 
+### Proteções no navegador
+
+- **Sem `innerHTML`**: todo texto digitado é exibido com `textContent` (`src/dom.js` recusa
+  `innerHTML`). Um nome como `<img src=x onerror=alert(1)>` aparece como texto.
+- **Cabeçalhos de segurança** (`firebase.json`, aplicados pelo Firebase Hosting):
+  - `Content-Security-Policy`: scripts, estilos e fontes só do próprio site; imagens do
+    site, `data:` e `blob:` (as fotos); conexões só com o Firestore e o Authentication do
+    Google; sem `eval`, sem plugins, sem scripts de terceiros.
+  - `frame-ancestors 'none'` e `X-Frame-Options: DENY`: o app não pode ser embutido em
+    outro site (contra *clickjacking*).
+  - `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`
+    e HSTS.
+  - A página inicial (`/` e `/index.html`) **nunca fica em cache**, para uma atualização
+    chegar na hora. Os arquivos de `/assets` têm nome com hash e ficam em cache por 1 ano.
+- **Fontes e logo servidos pelo próprio app**: nenhum pedido a Google Fonts ou a outros
+  servidores. O Vite não embute arquivos como `data:` (`vite.config.js`).
+- A CSP foi testada com o **build de produção** servido pelo emulador do Hosting: login,
+  checklist com foto, painel, Limpeza e funcionários funcionaram **sem nenhuma violação**,
+  e um script externo carregado de propósito foi bloqueado.
+
 ## Por quanto tempo os dados ficam (`src/retencao.js`)
 
 - **Fotos: 7 dias. Respostas e observações: 30 dias**, contando hoje.
@@ -57,38 +157,18 @@ O design completo e as etapas estão em [`docs/design.md`](docs/design.md).
   escaparia se nenhum aparelho do setor nem o chefe abrisse o app por uns 2 meses. Mesmo
   assim, o espaço usado ficaria muito abaixo do limite gratuito.
 
-## Proteções no navegador
-
-- **Sem `innerHTML`**: todo texto digitado é exibido com `textContent` (`src/dom.js` recusa
-  `innerHTML`). Um nome como `<img src=x onerror=alert(1)>` aparece como texto.
-- **Cabeçalhos de segurança** (`firebase.json`, aplicados pelo Firebase Hosting):
-  - `Content-Security-Policy`: scripts, estilos e fontes só do próprio site; imagens do
-    site e `data:` (as fotos); conexões só com o Firestore e o Authentication do Google;
-    sem `eval`, sem plugins, sem scripts de terceiros.
-  - `frame-ancestors 'none'` e `X-Frame-Options: DENY`: o app não pode ser embutido em
-    outro site (contra *clickjacking*).
-  - `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`
-    e HSTS.
-  - A página inicial (`/` e `/index.html`) **nunca fica em cache**, para uma atualização
-    chegar na hora. Os arquivos de `/assets` têm nome com hash e ficam em cache por 1 ano.
-- **Fontes e logo servidos pelo próprio app**: nenhum pedido a Google Fonts ou a outros
-  servidores. O Vite não embute arquivos como `data:` (`vite.config.js`).
-- A CSP foi testada com o **build de produção** servido pelo emulador do Hosting: login,
-  checklist com foto, painel, Limpeza e funcionários funcionaram **sem nenhuma violação**,
-  e um script externo carregado de propósito foi bloqueado.
-
 ## Deploy (publicação)
 
 O deploy é **automático pelo GitHub Actions** (`.github/workflows/deploy-firebase.yml`): a
-cada mudança na `main` (menos só em documentos), ele roda os testes unitários e os testes no
-emulador e, **só se tudo passar**, faz o build e publica o Hosting e as regras do Firestore.
-Também dá para rodar à mão em GitHub > Actions > "Deploy no Firebase" > Run workflow.
+cada mudança na `main` (menos só em documentos, como este README), ele roda os testes
+unitários e os testes no emulador e, **só se tudo passar**, faz o build e publica o Hosting
+e as regras do Firestore. Também dá para rodar à mão em GitHub > Actions > "Deploy no
+Firebase" > Run workflow.
 
 - A chave da conta de serviço fica no secret `FIREBASE_SERVICE_ACCOUNT` do repositório
   (Settings > Secrets and variables > Actions > **Repository secrets**). Ela é gravada num
   arquivo temporário, usada pelo `firebase deploy` e apagada no fim. Nunca vai para o código.
 - A chave é a do projeto **`dudu-checklist`** (cada projeto tem a sua).
-- Endereços: https://dudu-checklist.web.app e https://dudu-checklist.firebaseapp.com
 - Se o deploy falhar por **permissão** (erro 403 ou "permission denied"), a conta de
   serviço `firebase-adminsdk-…@dudu-checklist.iam.gserviceaccount.com` precisa destes papéis em
   https://console.cloud.google.com/iam-admin/iam?project=dudu-checklist : *Firebase Hosting
@@ -96,6 +176,15 @@ Também dá para rodar à mão em GitHub > Actions > "Deploy no Firebase" > Run 
 - O deploy publica **só o site e as regras** (não os índices). As consultas do app usam só
   filtros de igualdade, que o Firestore atende sem índice composto. **O emulador não confere
   índices**: se o app real mostrar um erro pedindo índice, avise (o erro traz um link).
+
+### Console do Firebase (projeto `dudu-checklist`)
+
+1. Projeto criado.
+2. App web registrado. A configuração vai em `src/firebase-config.js`.
+3. Authentication com **E-mail/senha** e as 6 contas, com os UIDs em `src/contas.js`.
+4. Firestore em `southamerica-east1` (São Paulo), modo produção.
+
+Nada disso pede cartão. Se aparecer pedido de upgrade para o plano Blaze, recuse.
 
 ## Consumo estimado do plano gratuito (Spark)
 
@@ -136,26 +225,7 @@ prazos aumentarem, refaça esta conta: o limite de 1 GiB é o primeiro que se ap
 7. Entre como **Limpeza**: aparecem os avisos do açougue e das câmaras (até alguém registrar),
    a atividade do dia e a semana.
 8. Entre com cada conta de setor e confira que **cada uma vê só o próprio setor**.
-9. No console do Firebase, em Firestore > Regras, as regras publicadas têm os 5 UIDs e não
+9. No console do Firebase, em Firestore > Regras, as regras publicadas têm os 6 UIDs e não
    são `allow read, write: if false`.
 10. No console, em Uso e faturamento, o plano continua **Spark**, sem cartão.
 11. Apague os dados de teste (respostas e fotos) ou espere o prazo de 7 e 30 dias.
-
-## Console do Firebase (projeto `dudu-checklist`)
-
-1. Projeto criado.
-2. App web registrado. A configuração vai em `src/firebase-config.js`.
-3. Authentication com **E-mail/senha** e as 6 contas, com os UIDs em `src/contas.js`.
-4. Firestore em `southamerica-east1` (São Paulo), modo produção.
-
-Nada disso pede cartão. Se aparecer pedido de upgrade para o plano Blaze, recuse.
-
-## Desenvolvimento
-
-```bash
-npm install
-npm test                 # testes sem emulador (itens, regras do checklist, contas, regras × app)
-npm run test:emulador    # testes nos emuladores do Firebase (precisa de Java 11+)
-npm run emuladores       # terminal 1: emuladores de Auth + Firestore (projeto demo)
-npm run dev:emulador     # terminal 2: app ligado aos emuladores
-```
